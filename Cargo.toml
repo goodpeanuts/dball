@@ -1,5 +1,5 @@
 [package]
-name = "eframe_template"
+name = "dball"
 version = "0.1.0"
 authors = ["Emil Ernerfeldt <emil.ernerfeldt@gmail.com>"]
 edition = "2024"
@@ -9,6 +9,10 @@ rust-version = "1.85"
 [package.metadata.docs.rs]
 all-features = true
 targets = ["x86_64-unknown-linux-gnu", "wasm32-unknown-unknown"]
+
+[features]
+default = ["terminal"]
+terminal = []
 
 [dependencies]
 egui = "0.32"
@@ -22,8 +26,20 @@ eframe = { version = "0.32", default-features = false, features = [
 ] }
 log = "0.4.27"
 
+anyhow = "1"
+ansi_term = "0.12"
+
 # You only need serde if you want app persistence:
 serde = { version = "1.0.219", features = ["derive"] }
+
+[dev-dependencies]
+criterion = "0.5"     # 若新版号不同，可用最新稳定版
+rand = "0.8"
+
+# 不使用默认的基准 harness（Criterion 自己提供）
+[[bench]]
+name = "dup_bench"
+harness = false
 
 # native:
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]

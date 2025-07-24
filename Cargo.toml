@@ -10,11 +10,20 @@ rust-version = "1.85"
 all-features = true
 targets = ["x86_64-unknown-linux-gnu", "wasm32-unknown-unknown"]
 
+[workspace]
+members = [
+    "."
+, "crates/dball-client", "crates/dball-combora"]
+resolver = "2"
+
 [features]
 default = ["terminal"]
-terminal = []
+terminal = ["iocraft"]
 
 [dependencies]
+dball-client ={ path = "crates/dball-client" }
+dball-combora ={ path = "crates/dball-combora" }
+
 egui = "0.32"
 eframe = { version = "0.32", default-features = false, features = [
     "accesskit",     # Make egui compatible with screen readers. NOTE: adds a lot of dependencies.
@@ -27,14 +36,18 @@ eframe = { version = "0.32", default-features = false, features = [
 log = "0.4.27"
 
 anyhow = "1"
-ansi_term = "0.12"
+
+dotenvy = "0.15"
+
+iocraft = { version = "0.7", optional = true }
 
 # You only need serde if you want app persistence:
 serde = { version = "1.0.219", features = ["derive"] }
+serde_json = "1.0"
 
 [dev-dependencies]
-criterion = "0.5"     # 若新版号不同，可用最新稳定版
 rand = "0.8"
+criterion = "0.5"     # 若新版号不同，可用最新稳定版
 
 # 不使用默认的基准 harness（Criterion 自己提供）
 [[bench]]

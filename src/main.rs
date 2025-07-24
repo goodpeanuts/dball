@@ -25,19 +25,8 @@ fn main() -> eframe::Result {
 }
 
 #[cfg(all(not(target_arch = "wasm32"), feature = "terminal"))]
-fn main() -> eframe::Result {
-    use dball::app::dball::DBall;
-
-    println!("Running in terminal mode. This is a placeholder for terminal-specific logic.");
-    let target_ticket = DBall::generate_random();
-    loop {
-        let ticket = DBall::generate_random();
-        if target_ticket == ticket {
-            println!("Found a matching ticket: {ticket}");
-            break;
-        }
-    }
-    Ok(())
+fn main() {
+    println!("Hello, world!");
 }
 
 // When compiling to web using trunk:

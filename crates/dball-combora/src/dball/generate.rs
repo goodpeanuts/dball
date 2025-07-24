@@ -1,7 +1,5 @@
-use crate::app::dball::DBall;
+use crate::dball::{DBall, DBallError};
 use std::collections::HashSet;
-
-use super::dball::DBallError;
 
 /// Generate a random number with a simple linear congruential generator
 fn simple_random(seed: &mut u64) -> u64 {

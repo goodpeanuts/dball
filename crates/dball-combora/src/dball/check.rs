@@ -1,8 +1,8 @@
-use crate::app::dball::{DBall, Reward};
+use crate::dball::{DBall, Reward};
 
 /// # Usage Example
 /// ```
-/// use dball::app::dball::DBall;
+/// use dball_combora::dball::DBall;
 ///
 /// // Generate random ticket
 /// let ticket = DBall::generate_random();
@@ -265,7 +265,7 @@ mod tests {
         assert!(result.is_err());
         assert_eq!(
             result,
-            Err(crate::app::dball::DBallError::InvaildRBallRange((1, 5)))
+            Err(crate::dball::DBallError::InvaildRBallRange((1, 5)))
         );
     }
 

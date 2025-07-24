@@ -42,6 +42,8 @@ diesel::table! {
         red5 -> Integer,
         red6 -> Integer,
         blue -> Integer,
+        created_time -> Timestamp,
+        modified_time -> Timestamp,
     }
 }
 

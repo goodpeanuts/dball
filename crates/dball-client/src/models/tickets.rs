@@ -52,6 +52,8 @@ pub struct Ticket {
     pub red5: i32,
     pub red6: i32,
     pub blue: i32,
+    pub created_time: NaiveDateTime,
+    pub modified_time: NaiveDateTime,
 }
 
 impl Ticket {
@@ -70,6 +72,8 @@ impl Ticket {
         let time = NaiveDateTime::parse_from_str(time_str, "%Y-%m-%d %H:%M:%S")
             .map_err(|e| TicketError::InvalidTimeFormat(e.to_string()))?;
 
+        let now = chrono::Utc::now().naive_utc();
+
         let ticket = Self {
             id: None,
             period,
@@ -81,6 +85,8 @@ impl Ticket {
             red5: red_numbers[4],
             red6: red_numbers[5],
             blue,
+            created_time: now,
+            modified_time: now,
         };
 
         ticket.check()?;
@@ -98,6 +104,8 @@ impl Ticket {
             return Err(TicketError::InvalidRedBallCount(red_numbers.len()));
         }
 
+        let now = chrono::Utc::now().naive_utc();
+
         let ticket = Self {
             id: None,
             period,
@@ -109,6 +117,8 @@ impl Ticket {
             red5: red_numbers[4],
             red6: red_numbers[5],
             blue,
+            created_time: now,
+            modified_time: now,
         };
 
         ticket.check()?;

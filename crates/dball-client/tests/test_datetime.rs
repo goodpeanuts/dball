@@ -35,6 +35,30 @@ fn test() -> anyhow::Result<()> {
 }
 
 #[test]
+fn test_ticket_datetime_fields() -> anyhow::Result<()> {
+    use dball_client::models::Ticket;
+
+    println!("=== Testing Timestamp Fields ===\n");
+
+    // Create a test ticket
+    let test_ticket = Ticket::new(
+        "2018005".to_string(),
+        "2018-11-20 21:18:20",
+        &[5, 12, 18, 25, 30, 33],
+        15,
+    )?;
+
+    println!("✅ Created test ticket:");
+    println!("   Period: {}", test_ticket.period);
+    println!("   Time: {}", test_ticket.formatted_time());
+    println!("   Created: {}", test_ticket.formatted_time());
+    println!("   Modified: {}", test_ticket.formatted_time());
+    println!("   Numbers: {}", test_ticket.format_numbers());
+
+    Ok(())
+}
+
+#[test]
 #[ignore = "cannote open database connection in test"]
 fn test_insert_into_db() -> anyhow::Result<()> {
     use dball_client::models::Ticket;

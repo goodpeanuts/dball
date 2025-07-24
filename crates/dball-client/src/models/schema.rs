@@ -29,3 +29,20 @@ diesel::table! {
         prize6_money -> Nullable<Integer>,
     }
 }
+
+diesel::table! {
+    tickets (id) {
+        id -> Nullable<Integer>,
+        period -> Text,
+        time -> Timestamp,
+        red1 -> Integer,
+        red2 -> Integer,
+        red3 -> Integer,
+        red4 -> Integer,
+        red5 -> Integer,
+        red6 -> Integer,
+        blue -> Integer,
+    }
+}
+
+diesel::allow_tables_to_appear_in_same_query!(ticket_log, tickets,);

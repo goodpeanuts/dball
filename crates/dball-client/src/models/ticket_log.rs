@@ -2,7 +2,7 @@ use diesel::prelude::*;
 use serde::{Deserialize, Serialize};
 
 #[derive(Queryable, Selectable, Serialize, Deserialize, Debug, Clone)]
-#[diesel(table_name = crate::datastore::schema::ticket_log)]
+#[diesel(table_name = super::schema::ticket_log)]
 #[diesel(check_for_backend(diesel::sqlite::Sqlite))]
 pub struct TicketLog {
     pub code: String,
@@ -33,7 +33,7 @@ pub struct TicketLog {
 }
 
 #[derive(Insertable, Serialize, Deserialize, Debug)]
-#[diesel(table_name = crate::datastore::schema::ticket_log)]
+#[diesel(table_name = super::schema::ticket_log)]
 pub struct NewTicketLog {
     pub code: String,
     pub kj_date: Option<chrono::NaiveDate>,

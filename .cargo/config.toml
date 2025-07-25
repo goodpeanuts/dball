@@ -1,0 +1,4 @@
+[alias]
+tc = "test -p dball-client -- --nocapture"
+tcq = "test -p dball-client"
+ctenv = "test -p dball-client -- --test clean_test_env --nocapture --ignored"

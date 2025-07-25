@@ -1,6 +1,24 @@
 // @generated automatically by Diesel CLI.
 
 diesel::table! {
+    spot (id) {
+        id -> Nullable<Integer>,
+        period -> Text,
+        red1 -> Integer,
+        red2 -> Integer,
+        red3 -> Integer,
+        red4 -> Integer,
+        red5 -> Integer,
+        red6 -> Integer,
+        blue -> Integer,
+        magnification -> Integer,
+        prize_status -> Nullable<Integer>,
+        created_time -> Timestamp,
+        modified_time -> Timestamp,
+    }
+}
+
+diesel::table! {
     ticket_log (code) {
         code -> Text,
         kj_date -> Nullable<Date>,
@@ -47,4 +65,4 @@ diesel::table! {
     }
 }
 
-diesel::allow_tables_to_appear_in_same_query!(ticket_log, tickets,);
+diesel::allow_tables_to_appear_in_same_query!(spot, ticket_log, tickets,);

@@ -2,7 +2,7 @@ use std::sync::LazyLock;
 
 use serde::{Deserialize, Serialize};
 
-use crate::{init_env, models::Ticket, parse_from_env};
+use crate::{models::Ticket, parse_from_env};
 
 #[derive(Debug)]
 pub struct GeneralLatestLotteryRequest {
@@ -64,7 +64,6 @@ impl TryFrom<LotteryData> for Ticket {
 }
 
 pub static GENERAL_LATEST_LOTTERY_API_COMMON: LazyLock<super::ApiCommon> = LazyLock::new(|| {
-    init_env();
     super::ApiCommon::from_env(
         "GENERAL_LATEST_LOTTERY_URL",
         "GENERAL_LATEST_LOTTERY_METHOD",
@@ -159,8 +158,6 @@ mod tests {
 
     #[tokio::test]
     async fn test_mxnzp_latest_lottery() {
-        init_env();
-
         let resp = get_latest_lottery().await;
 
         if let Ok(response) = resp {

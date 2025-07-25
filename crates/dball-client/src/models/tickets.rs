@@ -1,5 +1,6 @@
 use ansi_term::Colour::{Blue, Green, Red};
 use chrono::NaiveDateTime;
+use dball_combora::dball::DBall;
 use diesel::prelude::*;
 use serde::{Deserialize, Serialize};
 use std::fmt::Display;
@@ -146,6 +147,15 @@ impl Ticket {
         vec![
             self.red1, self.red2, self.red3, self.red4, self.red5, self.red6,
         ]
+    }
+
+    /// Convert ticket to `DBall` format for prize checking
+    pub fn to_dball(&self) -> anyhow::Result<DBall> {
+        let red_numbers = self.red_numbers();
+        let red_u8: Vec<u8> = red_numbers.iter().map(|&x| x as u8).collect();
+
+        DBall::new_one(red_u8, self.blue as u8)
+            .map_err(|e| anyhow::anyhow!("Failed to convert ticket to DBall: {e}"))
     }
 
     pub fn blue_number(&self) -> i32 {

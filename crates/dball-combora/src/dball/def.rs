@@ -125,6 +125,25 @@ pub enum Reward {
     NoWin,
 }
 
+impl TryFrom<i32> for Reward {
+    type Error = anyhow::Error;
+
+    fn try_from(value: i32) -> Result<Self, Self::Error> {
+        match value {
+            300_000.. => Ok(Self::FirstPrize),
+            140_000..300_000 => Ok(Self::SecondPrize),
+            3_000 => Ok(Self::ThirdPrize),
+            200 => Ok(Self::FourthPrize),
+            100 => Ok(Self::FifthPrize),
+            5 => Ok(Self::SixthPrize),
+            0 => Ok(Self::NoWin),
+            _ => Err(anyhow::anyhow!(
+                "Invalid prize value converted to Reward: {value}"
+            )),
+        }
+    }
+}
+
 impl Reward {
     /// get the prize amount
     pub fn prize_amount(&self) -> u32 {
@@ -150,5 +169,10 @@ impl Reward {
             Self::SixthPrize => "#6",
             Self::NoWin => "#0",
         }
+    }
+
+    /// Convert reward to i32 value for database storage
+    pub fn to_i32(&self) -> i32 {
+        self.prize_amount() as i32
     }
 }

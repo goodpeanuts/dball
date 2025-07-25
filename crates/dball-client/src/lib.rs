@@ -1,7 +1,3 @@
-//! 数据库客户端模块
-//!
-//! 负责处理所有的数据库相关操作，包括数据的存储、查询和管理。
-
 use std::{path::PathBuf, sync::LazyLock};
 
 pub(crate) static ENV_GUARD: LazyLock<Result<PathBuf, anyhow::Error>> = LazyLock::new(|| {
@@ -13,8 +9,9 @@ pub mod models;
 pub mod request;
 pub mod service;
 
+const NEVER_NONE_BY_DATABASE: &str = "Should not be None guaranteed by database";
+
 /// load env file, panic if failed
-#[ctor::ctor]
 fn init_env() {
     crate::ENV_GUARD
         .as_ref()
@@ -31,14 +28,14 @@ where
         .unwrap_or_else(|e| panic!("Failed to parse {key}: {e}"))
 }
 
-#[cfg(test)]
 #[ctor::ctor]
 fn init_test_logger() {
+    init_env();
+
     println!("Initializing test logger");
-    let _ = env_logger::builder()
+    env_logger::builder()
         .parse_default_env()
         .is_test(true)
-        .filter_level(log::LevelFilter::Error)
         .try_init();
 }
 
@@ -69,12 +66,22 @@ fn copy_test_db() -> std::path::PathBuf {
 
     let main_db_path = root_path.join(main_db_url);
     let test_db_path = root_path.join(test_db_url);
-    if !test_db_path.exists() {
-        std::fs::copy(main_db_path, &test_db_path).unwrap();
-    } else {
-        std::fs::remove_file(&test_db_path).unwrap();
-        std::fs::copy(main_db_path, &test_db_path).unwrap();
+
+    // clean old test database
+    let files_to_remove = [
+        test_db_path.clone(),
+        test_db_path.with_extension("db-shm"),
+        test_db_path.with_extension("db-wal"),
+    ];
+
+    for file in &files_to_remove {
+        if file.exists() {
+            let _ = std::fs::remove_file(file);
+        }
     }
+
+    // copy main database as test database
+    std::fs::copy(main_db_path, &test_db_path).unwrap();
 
     log::debug!("Created test db: {}", test_db_path.display());
     test_db_path

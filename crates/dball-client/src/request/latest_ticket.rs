@@ -6,11 +6,11 @@ use crate::{models::Ticket, parse_from_env};
 
 #[derive(Debug)]
 pub struct GeneralLatestLotteryRequest {
-    params: QueryParams,
+    params: GeneralLatestLotteryRequestParams,
 }
 
 #[derive(Debug, Serialize)]
-struct QueryParams {
+struct GeneralLatestLotteryRequestParams {
     app_id: String,
     app_secret: String,
     code: String,
@@ -126,7 +126,7 @@ impl GeneralLatestLotteryRequest {
         let app_secret = parse_from_env::<String>("APP_SECRET");
 
         Self {
-            params: QueryParams {
+            params: GeneralLatestLotteryRequestParams {
                 app_id,
                 app_secret,
                 code: "ssq".to_owned(),
@@ -137,7 +137,7 @@ impl GeneralLatestLotteryRequest {
     #[cfg(test)]
     pub fn new_with_params(app_id: String, app_secret: String, code: String) -> Self {
         Self {
-            params: QueryParams {
+            params: GeneralLatestLotteryRequestParams {
                 app_id,
                 app_secret,
                 code,
@@ -158,6 +158,9 @@ mod tests {
 
     #[tokio::test]
     async fn test_mxnzp_latest_lottery() {
+        // QPS: 1
+        tokio::time::sleep(std::time::Duration::from_secs(2)).await;
+
         let resp = get_latest_lottery().await;
 
         if let Ok(response) = resp {

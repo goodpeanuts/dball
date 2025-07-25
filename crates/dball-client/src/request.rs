@@ -2,10 +2,12 @@ use std::{str::FromStr, sync::LazyLock};
 
 use crate::parse_from_env;
 
-pub mod mxnzp;
+pub mod latest_ticket;
+pub mod specified_ticket;
 
-pub use mxnzp::create_lottery_request;
+pub use latest_ticket::create_lottery_request;
 use serde::Deserialize;
+pub use specified_ticket::{create_specified_lottery_request, get_specified_lottery};
 
 static CLIENT: LazyLock<reqwest::Client> = LazyLock::new(reqwest::Client::new);
 

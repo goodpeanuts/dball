@@ -4,45 +4,48 @@ use crate::parse_from_env;
 
 pub mod mxnzp;
 
-pub use mxnzp::GENERAL_LATEST_LOTTERY_REQUEST;
+pub use mxnzp::create_lottery_request;
+use serde::Deserialize;
 
 static CLIENT: LazyLock<reqwest::Client> = LazyLock::new(reqwest::Client::new);
 
-#[expect(async_fn_in_trait)]
-pub trait SendRequest {
-    async fn send(&self) -> anyhow::Result<reqwest::Response>;
-
-    async fn resp_handle(
-        &self,
-        identifier: &str,
-        resp: Result<reqwest::Response, reqwest::Error>,
-    ) -> anyhow::Result<reqwest::Response> {
-        match resp {
-            Ok(response) => {
-                if response.status().is_success() {
-                    Ok(response)
-                } else {
-                    let error_message =
-                        format!("{} failed with status: {}", identifier, response.status());
-                    let text = response.text().await.unwrap_or_default();
-                    log::error!("{error_message}\n==== Response: ====\n {text}");
-                    Err(anyhow::anyhow!("{error_message}"))
-                }
-            }
-            Err(e) => Err(anyhow::anyhow!("Request failed: {}", e)),
-        }
-    }
-}
-
-pub(crate) struct RequestCommon {
+#[derive(Debug, Clone)]
+pub struct ApiCommon {
     url: String,
     req_type: RequestType,
     return_type: RequestReturnType,
 }
 
-impl RequestCommon {
-    /// Create a new `RequestCommon` with values from environment variables
-    pub(crate) fn from_env(url_key: &str, req_type_key: &str, return_type_key: &str) -> Self {
+pub struct Api<S>
+where
+    S: ApiRequest,
+{
+    pub common: &'static ApiCommon,
+    pub state: S,
+}
+
+impl<S> Api<S>
+where
+    S: ApiRequest,
+{
+    pub async fn execute(self) -> anyhow::Result<S::Response> {
+        self.state.execute(self.common).await
+    }
+}
+
+#[expect(async_fn_in_trait)]
+pub trait ApiRequest
+where
+    for<'de> Self::Response: Deserialize<'de>,
+{
+    type Response;
+
+    async fn execute(self, common: &ApiCommon) -> anyhow::Result<Self::Response>;
+}
+
+impl ApiCommon {
+    /// Create a new `ApiCommon` with values from environment variables
+    pub fn from_env(url_key: &str, req_type_key: &str, return_type_key: &str) -> Self {
         let url = parse_from_env(url_key);
         let req_type = parse_from_env::<RequestType>(req_type_key);
         let return_type = parse_from_env::<RequestReturnType>(return_type_key);
@@ -54,9 +57,8 @@ impl RequestCommon {
         }
     }
 
-    /// Create a new `RequestCommon` with explicit values
-    #[expect(dead_code)]
-    pub(crate) fn new(url: String, req_type: RequestType, return_type: RequestReturnType) -> Self {
+    /// Create a new `ApiCommon` with explicit values
+    pub fn new(url: String, req_type: RequestType, return_type: RequestReturnType) -> Self {
         Self {
             url,
             req_type,
@@ -64,17 +66,15 @@ impl RequestCommon {
         }
     }
 
-    pub(crate) fn url(&self) -> &String {
+    pub fn url(&self) -> &str {
         &self.url
     }
 
-    #[expect(dead_code)]
-    pub(crate) fn req_type(&self) -> RequestType {
+    pub fn req_type(&self) -> RequestType {
         self.req_type
     }
 
-    #[expect(dead_code)]
-    pub(crate) fn return_type(&self) -> RequestReturnType {
+    pub fn return_type(&self) -> RequestReturnType {
         self.return_type
     }
 }

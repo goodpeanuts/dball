@@ -63,7 +63,6 @@ pub struct NewTicketLog {
 }
 
 impl TicketLog {
-    /// 获取红球号码数组
     pub fn red_numbers(&self) -> Vec<i32> {
         [
             self.number1,
@@ -78,12 +77,10 @@ impl TicketLog {
         .collect()
     }
 
-    /// 获取蓝球号码
     pub fn blue_number(&self) -> Option<i32> {
         self.number7
     }
 
-    /// 获取所有号码
     pub fn all_numbers(&self) -> Vec<i32> {
         let mut numbers = self.red_numbers();
         if let Some(blue) = self.blue_number() {
@@ -92,11 +89,28 @@ impl TicketLog {
         numbers
     }
 
-    /// 解析JSON数据为号码数组
     pub fn parse_json_numbers(&self) -> Result<Vec<i32>, serde_json::Error> {
         match &self.jsondata {
             Some(json_str) => serde_json::from_str(json_str),
             None => Ok(vec![]),
         }
+    }
+}
+
+use ansi_term::Color::{Blue, Red};
+
+impl std::fmt::Display for TicketLog {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let red_numbers = self.red_numbers();
+        let blue_number = self.blue_number().unwrap_or(0);
+
+        write!(
+            f,
+            "period: {}, date: {}, numbers: {} + {}",
+            self.code,
+            self.kj_date.map_or("unknown".to_owned(), |d| d.to_string()),
+            Red.bold().paint(format!("{red_numbers:?}")),
+            Blue.bold().paint(blue_number.to_string())
+        )
     }
 }

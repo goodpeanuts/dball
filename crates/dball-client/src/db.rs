@@ -3,6 +3,10 @@ use diesel::r2d2::{ConnectionManager, Pool, PooledConnection};
 use diesel::sqlite::SqliteConnection;
 use std::sync::LazyLock;
 
+pub mod ticket_log;
+pub mod tickets;
+pub mod update;
+
 fn get_database_url() -> String {
     #[cfg(not(test))]
     let database_url = { std::env::var("DATABASE_URL").expect("DATABASE_URL must be set") };
@@ -27,7 +31,7 @@ static DB_POOL: LazyLock<Pool<ConnectionManager<SqliteConnection>>> = LazyLock::
         .expect("Failed to create pool")
 });
 
-pub fn establish_connection() -> anyhow::Result<SqliteConnection> {
+pub fn establish_db_connection() -> anyhow::Result<SqliteConnection> {
     let database_url = get_database_url();
     SqliteConnection::establish(&database_url).map_err(|e| {
         let err_message = format!("Error connecting to {database_url}: {e}");
@@ -36,8 +40,7 @@ pub fn establish_connection() -> anyhow::Result<SqliteConnection> {
     })
 }
 
-pub fn get_db_connection() -> anyhow::Result<PooledConnection<ConnectionManager<SqliteConnection>>>
-{
+fn get_db_connection() -> anyhow::Result<PooledConnection<ConnectionManager<SqliteConnection>>> {
     DB_POOL
         .get()
         .map_err(|e| anyhow::anyhow!("Failed to get DB connection: {}", e))
@@ -49,7 +52,7 @@ mod tests {
 
     #[test]
     pub fn get_test_db_connection() {
-        println!("Starting database connection test");
+        log::info!("Starting database connection test");
         assert!(get_db_connection().is_ok());
     }
 }

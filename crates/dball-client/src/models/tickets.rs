@@ -4,42 +4,10 @@ use diesel::prelude::*;
 use serde::{Deserialize, Serialize};
 use std::fmt::Display;
 
-/// Ticket validation error types
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub enum TicketError {
-    InvalidRedBallCount(usize),
-    RedBallOutOfRange(i32),
-    RedBallDuplicate,
-    BlueBallOutOfRange(i32),
-    EmptyPeriod,
-    InvalidTimeFormat(String),
-}
-
-impl Display for TicketError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Self::InvalidRedBallCount(count) => {
-                write!(f, "Invalid number of red balls: expected 6, got {count}")
-            }
-            Self::RedBallOutOfRange(ball) => {
-                write!(f, "Red ball {ball} is out of range (1-33)")
-            }
-            Self::RedBallDuplicate => write!(f, "Duplicate red balls found"),
-            Self::BlueBallOutOfRange(ball) => {
-                write!(f, "Blue ball {ball} is out of range (1-16)")
-            }
-            Self::EmptyPeriod => write!(f, "Period cannot be empty"),
-            Self::InvalidTimeFormat(time_str) => write!(f, "Invalid time format: {time_str}"),
-        }
-    }
-}
-
-impl std::error::Error for TicketError {}
-
 /// Complete ticket record structure for both querying and inserting
 /// The id field will be None for new records and Some(value) for existing records
 #[derive(Queryable, Selectable, Insertable, Serialize, Deserialize, Debug, Clone)]
-#[diesel(table_name = super::schema::tickets)]
+#[diesel(table_name = crate::models::schema::tickets)]
 #[diesel(check_for_backend(diesel::sqlite::Sqlite))]
 pub struct Ticket {
     pub id: Option<i32>,
@@ -198,6 +166,51 @@ impl Ticket {
     }
 }
 
+/// Ticket validation error types
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum TicketError {
+    InvalidRedBallCount(usize),
+    RedBallOutOfRange(i32),
+    RedBallDuplicate,
+    BlueBallOutOfRange(i32),
+    EmptyPeriod,
+    InvalidTimeFormat(String),
+}
+
+impl PartialEq for Ticket {
+    fn eq(&self, other: &Self) -> bool {
+        self.period == other.period
+            && self.red1 == other.red1
+            && self.red2 == other.red2
+            && self.red3 == other.red3
+            && self.red4 == other.red4
+            && self.red5 == other.red5
+            && self.red6 == other.red6
+            && self.blue == other.blue
+    }
+}
+
+impl Display for TicketError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::InvalidRedBallCount(count) => {
+                write!(f, "Invalid number of red balls: expected 6, got {count}")
+            }
+            Self::RedBallOutOfRange(ball) => {
+                write!(f, "Red ball {ball} is out of range (1-33)")
+            }
+            Self::RedBallDuplicate => write!(f, "Duplicate red balls found"),
+            Self::BlueBallOutOfRange(ball) => {
+                write!(f, "Blue ball {ball} is out of range (1-16)")
+            }
+            Self::EmptyPeriod => write!(f, "Period cannot be empty"),
+            Self::InvalidTimeFormat(time_str) => write!(f, "Invalid time format: {time_str}"),
+        }
+    }
+}
+
+impl std::error::Error for TicketError {}
+
 impl std::fmt::Display for Ticket {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(
@@ -214,5 +227,41 @@ impl std::fmt::Display for Ticket {
             )),
             Blue.bold().paint(format!("{:02}", self.blue))
         )
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+    #[test]
+    fn create_ticket_datetime_fields() -> anyhow::Result<()> {
+        // Create a test ticket
+        let test_ticket = Ticket::new(
+            "2018005".to_string(),
+            "2018-11-20 21:18:20",
+            &[5, 12, 18, 25, 30, 33],
+            15,
+        )?;
+
+        log::info!("created ticket success: {test_ticket}");
+
+        Ok(())
+    }
+
+    #[test]
+    fn create_ticket_with_valid_time_format() {
+        let time_str = "2018-11-20 21:18:20";
+        let red_numbers = [1, 5, 12, 18, 23, 31];
+
+        let t = Ticket::new("2018001".to_string(), time_str, &red_numbers, 8);
+        assert!(t.is_ok());
+    }
+
+    #[test]
+    fn create_ticket_with_invalid_time_format() {
+        let red_numbers = [1, 5, 12, 18, 23, 31];
+
+        let t = Ticket::new("2018002".to_string(), "invalid-time", &red_numbers, 8);
+        assert!(matches!(t, Err(TicketError::InvalidTimeFormat(_))));
     }
 }

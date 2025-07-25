@@ -38,7 +38,7 @@ fn init_test_logger() {
     let _ = env_logger::builder()
         .parse_default_env()
         .is_test(true)
-        .filter_level(log::LevelFilter::Debug)
+        .filter_level(log::LevelFilter::Error)
         .try_init();
 }
 
@@ -58,7 +58,6 @@ fn new_test_env_guard() {
 struct TestEnvGuard {
     test_db: PathBuf,
 }
-
 
 #[cfg(test)]
 /// copy test database from main database

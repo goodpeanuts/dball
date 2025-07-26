@@ -8,11 +8,12 @@ use crate::{
         tickets::{get_tickets_by_period, insert_ticket},
     },
     models::Ticket,
-    request::latest_ticket::get_latest_lottery,
+    request::MXNZP_PROVIDER,
 };
 
 pub async fn update_latest_ticket() -> anyhow::Result<()> {
-    let request_latest_ticket = get_latest_lottery()
+    let request_latest_ticket = MXNZP_PROVIDER
+        .get_latest_lottery()
         .await?
         .data
         .and_then(|t| Ticket::try_from(t).ok())

@@ -2,12 +2,11 @@ use std::{str::FromStr, sync::LazyLock};
 
 use crate::parse_from_env;
 
-pub mod latest_ticket;
-pub mod specified_ticket;
+pub mod factory;
+pub mod mxnzp;
+pub mod provider;
 
-pub use latest_ticket::create_lottery_request;
-use serde::Deserialize;
-pub use specified_ticket::{create_specified_lottery_request, get_specified_lottery};
+pub use mxnzp::MXNZP_PROVIDER;
 
 static CLIENT: LazyLock<reqwest::Client> = LazyLock::new(reqwest::Client::new);
 
@@ -20,7 +19,7 @@ pub struct ApiCommon {
 
 pub struct Api<S>
 where
-    S: ApiRequest,
+    S: provider::ProviderRequest,
 {
     pub common: &'static ApiCommon,
     pub state: S,
@@ -28,21 +27,11 @@ where
 
 impl<S> Api<S>
 where
-    S: ApiRequest,
+    S: provider::ProviderRequest,
 {
     pub async fn execute(self) -> anyhow::Result<S::Response> {
         self.state.execute(self.common).await
     }
-}
-
-#[expect(async_fn_in_trait)]
-pub trait ApiRequest
-where
-    for<'de> Self::Response: Deserialize<'de>,
-{
-    type Response;
-
-    async fn execute(self, common: &ApiCommon) -> anyhow::Result<Self::Response>;
 }
 
 impl ApiCommon {

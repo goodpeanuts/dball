@@ -15,5 +15,5 @@ target_wasm
 .env
 database/
 
-*.md
-!README.md
+xxdoc/
+Claude.md

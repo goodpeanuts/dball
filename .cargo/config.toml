@@ -1,4 +1,11 @@
 [alias]
-tc = "test -p dball-client -- --nocapture"
-tcq = "test -p dball-client"
+# test aliases for dball-client
+tpc = "test -p dball-client -- --nocapture --test-threads=1"
+
+# test aliases for dball-client quite
+tpcq = "test -p dball-client -- --test-threads=1"
+
+# test aliases for dball-client clean test env
 ctenv = "test -p dball-client -- --test clean_test_env --nocapture --ignored"
+
+# cargo clippy --all  && cargo check --all && cargo fmt --all 

@@ -37,10 +37,7 @@ pub fn get_ticket_by_period(period: &str) -> anyhow::Result<Option<Ticket>> {
             0 => Ok(None),
             1 => Ok(results.first().cloned()),
             _ => Err(diesel::result::Error::QueryBuilderError(Box::new(
-                std::io::Error::new(
-                    std::io::ErrorKind::Other,
-                    "Multiple records found, but expected only one",
-                ),
+                std::io::Error::other("Multiple records found, but expected only one"),
             ))),
         })
         .map_err(|e| anyhow::anyhow!("Error finding tickets for period {}: {}", period, e))

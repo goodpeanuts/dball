@@ -200,6 +200,22 @@ impl PartialEq for Ticket {
     }
 }
 
+impl TryFrom<Ticket> for DBall {
+    type Error = anyhow::Error;
+
+    fn try_from(ticket: Ticket) -> Result<Self, Self::Error> {
+        ticket.to_dball()
+    }
+}
+
+impl TryFrom<&Ticket> for DBall {
+    type Error = anyhow::Error;
+
+    fn try_from(ticket: &Ticket) -> Result<Self, Self::Error> {
+        ticket.to_dball()
+    }
+}
+
 impl Display for TicketError {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {

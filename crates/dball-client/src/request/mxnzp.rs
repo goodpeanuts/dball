@@ -59,7 +59,7 @@ impl Default for MxnzpProvider {
 #[cfg(test)]
 mod tests {
     use crate::models::Ticket;
-    use crate::request::provider::Provider;
+    use crate::request::provider::{Provider, ProviderResponse};
     use std::time::Instant;
 
     use super::*;
@@ -87,7 +87,7 @@ mod tests {
         let resp = MXNZP_PROVIDER.get_specified_lottery(expect).await;
 
         if let Ok(response) = resp {
-            if let Some(data) = response.data {
+            if let Some(data) = response.get_data() {
                 log::debug!("API Response data: {data:?}");
                 let ticket = Ticket::try_from(data);
                 assert!(ticket.is_ok(), "Failed to convert LotteryData to Ticket");

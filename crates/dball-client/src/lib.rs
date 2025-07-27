@@ -11,6 +11,17 @@ pub mod service;
 
 const NEVER_NONE_BY_DATABASE: &str = "Should not be None guaranteed by database";
 
+pub fn setup(log_level: Option<log::LevelFilter>) {
+    init_env();
+
+    let mut logger = env_logger::Builder::from_default_env();
+    if let Some(level) = log_level {
+        logger.filter_level(level);
+    }
+
+    logger.try_init().expect("Failed to initialize logger");
+}
+
 /// load env file, panic if failed
 fn init_env() {
     crate::ENV_GUARD
@@ -29,6 +40,7 @@ where
 }
 
 #[ctor::ctor]
+#[cfg(test)]
 fn init_test_logger() {
     init_env();
 

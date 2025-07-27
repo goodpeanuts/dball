@@ -12,11 +12,21 @@ pub fn get_all_records() -> anyhow::Result<Vec<TicketLog>> {
         .map_err(|e| anyhow::anyhow!("Error loading records: {}", e))
 }
 
-pub fn get_record_by_code(record_code: &str) -> anyhow::Result<TicketLog> {
+pub fn get_record_by_code(record_code: &str) -> anyhow::Result<Option<TicketLog>> {
     let mut connection = get_db_connection()?;
     ticket_log::table
         .filter(ticket_log::code.eq(record_code))
-        .first::<TicketLog>(&mut connection)
+        .load::<TicketLog>(&mut connection)
+        .and_then(|results| match results.len() {
+            0 => Ok(None),
+            1 => Ok(results.first().cloned()),
+            _ => Err(diesel::result::Error::QueryBuilderError(Box::new(
+                std::io::Error::new(
+                    std::io::ErrorKind::Other,
+                    "Multiple records found, but expected only one",
+                ),
+            ))),
+        })
         .map_err(|e| anyhow::anyhow!("Error finding record with code {}: {}", record_code, e))
 }
 
@@ -101,14 +111,13 @@ mod test {
     #[test]
     fn find_records_by_period() {
         match get_record_by_code("2003001") {
-            Ok(record) => {
-                log::info!("{record}");
-
-                match record.parse_json_numbers() {
+            Ok(record) => match record {
+                Some(record) => match record.parse_json_numbers() {
                     Ok(json_numbers) => log::info!("json numbers: {json_numbers:?}"),
                     Err(e) => log::error!("parse json numbers failed: {e}"),
-                }
-            }
+                },
+                None => log::info!("record not found"),
+            },
             Err(e) => panic!("{e}"),
         }
     }

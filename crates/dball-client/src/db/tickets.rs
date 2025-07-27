@@ -8,7 +8,7 @@ pub fn insert_ticket(new_ticket: &Ticket) -> anyhow::Result<()> {
     diesel::insert_into(tickets::table)
         .values(new_ticket)
         .execute(&mut connection)
-        .map_err(|e| anyhow::anyhow!("Error inserting ticket: {}", e))
+        .map_err(|e| anyhow::anyhow!("Error inserting ticket: {e}"))
         .and_then(|count| {
             if count != 1 {
                 Err(anyhow::anyhow!(
@@ -28,11 +28,21 @@ pub fn get_all_tickets() -> anyhow::Result<Vec<Ticket>> {
         .map_err(|e| anyhow::anyhow!("Error loading tickets: {}", e))
 }
 
-pub fn get_tickets_by_period(period: &str) -> anyhow::Result<Vec<Ticket>> {
+pub fn get_ticket_by_period(period: &str) -> anyhow::Result<Option<Ticket>> {
     let mut connection = get_db_connection()?;
     tickets::table
         .filter(tickets::period.eq(period))
         .load::<Ticket>(&mut connection)
+        .and_then(|results| match results.len() {
+            0 => Ok(None),
+            1 => Ok(results.first().cloned()),
+            _ => Err(diesel::result::Error::QueryBuilderError(Box::new(
+                std::io::Error::new(
+                    std::io::ErrorKind::Other,
+                    "Multiple records found, but expected only one",
+                ),
+            ))),
+        })
         .map_err(|e| anyhow::anyhow!("Error finding tickets for period {}: {}", period, e))
 }
 
@@ -92,7 +102,7 @@ mod test {
             12,
         )?;
 
-        if let Err(e) = get_tickets_by_period(&test_ticket.period) {
+        if let Err(e) = get_ticket_by_period(&test_ticket.period) {
             log::error!("Failed to find tickets by period: {}", e);
             return Err(e);
         }

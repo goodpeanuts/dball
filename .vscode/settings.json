@@ -2,7 +2,7 @@
     "rust-analyzer.restartServerOnConfigChange": true,
     "rust-analyzer.runnables.extraEnv": {"PATH": "${env:HOME}/.cargo/bin:${env:PATH}"},
 
-    "rust-analyzer.cargo.features": ["terminal"],
+    // "rust-analyzer.cargo.features": ["terminal"],
     // "rust-analyzer.cargo.target": "wasm32-unknown-unknown",
     "rust-analyzer.check.targets": [
         "aarch64-apple-darwin",

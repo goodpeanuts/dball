@@ -49,10 +49,22 @@ pub trait ProviderRequest: Send + 'static
 where
     for<'de> Self::Response: Deserialize<'de>,
 {
-    type Response;
+    type Response: ProviderResponse;
 
     /// Execute the actual HTTP request
     async fn execute(self, common: &ApiCommon) -> anyhow::Result<Self::Response>;
+}
+
+// #[expect(async_fn_in_trait)]
+pub trait ProviderResponse: Send + 'static
+where
+    for<'de> Self: Deserialize<'de>,
+{
+    type Data: for<'de> Deserialize<'de>;
+
+    fn get_code(&self) -> i32;
+    fn get_msg(&self) -> String;
+    fn get_data(&self) -> Option<&Self::Data>;
 }
 
 /// QPS-limited executor that manages request queues and rate limiting

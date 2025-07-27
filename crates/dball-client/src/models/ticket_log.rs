@@ -1,3 +1,4 @@
+use dball_combora::dball::DBall;
 use diesel::prelude::*;
 use serde::{Deserialize, Serialize};
 
@@ -95,6 +96,15 @@ impl TicketLog {
             None => Ok(vec![]),
         }
     }
+
+    pub fn to_dball(&self) -> anyhow::Result<DBall> {
+        let red_numbers = self.red_numbers();
+        let red_u8: Vec<u8> = red_numbers.iter().map(|&x| x as u8).collect();
+        let blue = self.blue_number().unwrap_or(0) as u8;
+
+        DBall::new_one(red_u8, blue)
+            .map_err(|e| anyhow::anyhow!("Failed to convert ticket log to DBall: {e}"))
+    }
 }
 
 use ansi_term::Color::{Blue, Red};
@@ -112,5 +122,13 @@ impl std::fmt::Display for TicketLog {
             Red.bold().paint(format!("{red_numbers:?}")),
             Blue.bold().paint(blue_number.to_string())
         )
+    }
+}
+
+impl TryFrom<TicketLog> for DBall {
+    type Error = anyhow::Error;
+
+    fn try_from(ticket_log: TicketLog) -> Result<Self, Self::Error> {
+        ticket_log.to_dball()
     }
 }

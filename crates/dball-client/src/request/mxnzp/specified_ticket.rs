@@ -4,7 +4,10 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
     parse_from_env,
-    request::{Api, ApiCommon, CLIENT, provider::ProviderRequest},
+    request::{
+        Api, ApiCommon, CLIENT,
+        provider::{ProviderRequest, ProviderResponse},
+    },
 };
 
 pub static GENERAL_SPECIFIED_LOTTERY_API_COMMON: LazyLock<ApiCommon> = LazyLock::new(|| {
@@ -33,13 +36,6 @@ struct GeneralSpecifiedLotteryRequestParams {
     app_secret: String,
     code: String,
     expect: String,
-}
-
-#[derive(Debug, Deserialize)]
-pub struct GeneralSpecifiedLotteryResponse {
-    pub code: i32,
-    pub msg: String,
-    pub data: Option<super::common::LotteryData>,
 }
 
 impl ProviderRequest for GeneralSpecifiedLotteryRequest {
@@ -110,5 +106,28 @@ impl GeneralSpecifiedLotteryRequest {
                 expect,
             },
         }
+    }
+}
+
+#[derive(Debug, Deserialize)]
+pub struct GeneralSpecifiedLotteryResponse {
+    code: i32,
+    msg: String,
+    data: Option<super::common::LotteryData>,
+}
+
+impl ProviderResponse for GeneralSpecifiedLotteryResponse {
+    type Data = super::common::LotteryData;
+
+    fn get_code(&self) -> i32 {
+        self.code
+    }
+
+    fn get_msg(&self) -> String {
+        self.msg.clone()
+    }
+
+    fn get_data(&self) -> Option<&Self::Data> {
+        self.data.as_ref()
     }
 }

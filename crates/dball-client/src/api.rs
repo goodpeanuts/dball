@@ -8,11 +8,11 @@ pub mod websocket;
 
 pub use provider::mxnzp::MXNZP_PROVIDER;
 use serde::{Deserialize, Serialize};
-use strum_macros::Display;
+use strum_macros::{Display, EnumIter};
 
 static CLIENT: LazyLock<reqwest::Client> = LazyLock::new(reqwest::Client::new);
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Display, Deserialize, Serialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Display, EnumIter, Deserialize, Serialize)]
 pub enum Protocol {
     #[strum(to_string = "rest")]
     Rest,
@@ -32,7 +32,7 @@ impl FromStr for Protocol {
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s.to_uppercase().as_str() {
             "REST" => Ok(Self::Rest),
-            "WEBSOCKET" => Ok(Self::WebSocket),
+            "WEBSOCKET" | "WS" => Ok(Self::WebSocket),
             "FIX" => Ok(Self::Fix),
             "MQ" => Ok(Self::MQ),
             "GRPC" => Ok(Self::Grpc),

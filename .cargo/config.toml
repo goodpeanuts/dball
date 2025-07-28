@@ -9,3 +9,5 @@ tpcq = "test -p dball-client -- --test-threads=1"
 ctenv = "test -p dball-client -- --test clean_test_env --nocapture --ignored"
 
 # cargo clippy --all  && cargo check --all && cargo fmt --all 
+
+cfaa = "clippy --fix --allow-dirty --allow-staged"

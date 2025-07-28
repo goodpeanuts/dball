@@ -3,7 +3,7 @@ use std::{
     time::{Duration, Instant},
 };
 
-use strum_macros::Display;
+use strum_macros::{Display, EnumIter};
 use tokio::sync::{Mutex, Semaphore};
 
 use crate::api::{ApiCommon, Protocol};
@@ -11,11 +11,17 @@ use crate::api::{ApiCommon, Protocol};
 pub mod mxnzp;
 
 /// Enum representing different API service providers
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Display)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Display, EnumIter)]
 pub enum ApiProvider {
     /// MXNZP API provider
     #[strum(to_string = "mxnzp")]
     Mxnzp,
+    /// Binance API provider
+    #[strum(to_string = "binance")]
+    Binance,
+    /// Custom API provider
+    #[strum(to_string = "custom")]
+    Custom,
 }
 
 impl ApiProvider {
@@ -23,6 +29,8 @@ impl ApiProvider {
     pub fn qps_limit(&self) -> u32 {
         match self {
             Self::Mxnzp => 1,
+            Self::Binance => 10,
+            Self::Custom => 5,
         }
     }
 
@@ -30,6 +38,8 @@ impl ApiProvider {
     pub fn id(&self) -> &'static str {
         match self {
             Self::Mxnzp => "mxnzp",
+            Self::Binance => "binance",
+            Self::Custom => "custom",
         }
     }
 
@@ -175,6 +185,19 @@ impl QpsLimitedExecutor {
             min_interval - elapsed
         } else {
             Duration::ZERO
+        }
+    }
+}
+
+impl std::str::FromStr for ApiProvider {
+    type Err = String;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        match s.to_lowercase().as_str() {
+            "mxnzp" => Ok(Self::Mxnzp),
+            "binance" => Ok(Self::Binance),
+            "custom" => Ok(Self::Custom),
+            _ => Err(format!("Invalid provider: {s}")),
         }
     }
 }

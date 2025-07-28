@@ -6,8 +6,8 @@ use dball_combora::dball::DBall;
 const YEAR_MODULO: usize = 100;
 
 use crate::{
+    api::{MXNZP_PROVIDER, provider::ProviderResponse as _},
     models::Ticket,
-    request::{MXNZP_PROVIDER, provider::ProviderResponse as _},
 };
 
 pub async fn update_tickets_table() -> anyhow::Result<()> {
@@ -58,6 +58,8 @@ pub async fn update_tickets_table() -> anyhow::Result<()> {
 
 pub async fn update_latest_ticket() -> anyhow::Result<()> {
     use crate::db::tickets;
+
+    tokio::time::sleep(tokio::time::Duration::from_secs(1)).await;
 
     let request_latest_ticket = MXNZP_PROVIDER
         .get_latest_lottery()
@@ -325,19 +327,26 @@ mod tests {
     async fn test_update_latest_ticket() {
         match update_latest_ticket().await {
             Ok(_) => log::info!("Latest ticket updated successfully"),
-            Err(e) => panic!("Failed to update latest ticket: {e}"),
+            Err(e) => {
+                panic!("Failed to update latest ticket: {e}");
+            }
         }
     }
 
     #[tokio::test]
     async fn test_update_all_spots() {
-        update_latest_ticket()
-            .await
-            .expect("Failed to update latest ticket");
+        // 首先尝试更新最新票据
+        match update_latest_ticket().await {
+            Ok(_) => log::info!("Latest ticket updated successfully"),
+            Err(e) => {
+                panic!("Failed to update latest ticket: {e}");
+            }
+        }
+
         match update_all_spots().await {
             Ok(_) => log::info!("All spots updated successfully"),
             Err(e) => {
-                log::error!("Failed to update all spots: {}", e);
+                log::error!("Failed to update all spots: {e}");
                 panic!("Failed to update all spots: {e}")
             }
         }

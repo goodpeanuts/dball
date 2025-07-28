@@ -4,9 +4,9 @@ pub(crate) static ENV_GUARD: LazyLock<Result<PathBuf, anyhow::Error>> = LazyLock
     dotenvy::dotenv().map_err(|e| anyhow::anyhow!("Failed to load .env file: {e}"))
 });
 
+pub mod api;
 pub mod db;
 pub mod models;
-pub mod request;
 pub mod service;
 
 const NEVER_NONE_BY_DATABASE: &str = "Should not be None guaranteed by database";
@@ -29,14 +29,19 @@ fn init_env() {
         .expect("Failed to load environment variables. Ensure .env file exists and is correctly configured.");
 }
 
-pub(crate) fn parse_from_env<T: std::str::FromStr>(key: &str) -> T
+pub(crate) fn parse_from_env<T: std::str::FromStr>(key: &str) -> Option<T>
 where
     <T as std::str::FromStr>::Err: std::fmt::Display,
 {
-    std::env::var(key)
-        .unwrap_or_else(|_| panic!("{key} must be set"))
-        .parse::<T>()
-        .unwrap_or_else(|e| panic!("Failed to parse {key}: {e}"))
+    let Some(value) = std::env::var(key).ok() else {
+        log::warn!("Environment variable {key} not set, returning None");
+        return None;
+    };
+
+    value.parse::<T>().ok().or_else(|| {
+        log::error!("Failed to parse {key} from env, returning None");
+        None
+    })
 }
 
 #[ctor::ctor]

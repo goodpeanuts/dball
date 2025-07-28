@@ -1,6 +1,6 @@
 use criterion::{BatchSize, BenchmarkId, Criterion, black_box, criterion_group, criterion_main};
 use dball::bench::{has_duplicates_hashset, has_duplicates_sort_in_place};
-use rand::{Rng, SeedableRng, rngs::StdRng};
+use rand::{Rng as _, SeedableRng as _, rngs::StdRng};
 
 /// 生成完全唯一的数据：0..n-1 的顺序，打乱 (shuffle)
 fn gen_unique_vec(n: usize, rng: &mut StdRng) -> Vec<u32> {
@@ -56,7 +56,7 @@ fn bench_duplicates(c: &mut Criterion) {
                 b.iter(|| {
                     let has_dup = has_duplicates_hashset(black_box(data));
                     black_box(has_dup);
-                })
+                });
             },
         );
 
@@ -68,7 +68,7 @@ fn bench_duplicates(c: &mut Criterion) {
                 b.iter(|| {
                     let has_dup = has_duplicates_hashset(black_box(data));
                     black_box(has_dup);
-                })
+                });
             },
         );
 
@@ -85,7 +85,7 @@ fn bench_duplicates(c: &mut Criterion) {
                         black_box(has_dup);
                     },
                     BatchSize::SmallInput,
-                )
+                );
             },
         );
 
@@ -101,7 +101,7 @@ fn bench_duplicates(c: &mut Criterion) {
                         black_box(has_dup);
                     },
                     BatchSize::SmallInput,
-                )
+                );
             },
         );
     }

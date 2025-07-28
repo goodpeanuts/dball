@@ -3,15 +3,18 @@ use std::{
     time::{Duration, Instant},
 };
 
-use serde::Deserialize;
+use strum_macros::Display;
 use tokio::sync::{Mutex, Semaphore};
 
-use super::ApiCommon;
+use crate::api::{ApiCommon, Protocol};
+
+pub mod mxnzp;
 
 /// Enum representing different API service providers
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Display)]
 pub enum ApiProvider {
     /// MXNZP API provider
+    #[strum(to_string = "mxnzp")]
     Mxnzp,
 }
 
@@ -29,42 +32,77 @@ impl ApiProvider {
             Self::Mxnzp => "mxnzp",
         }
     }
-}
 
-/// Trait representing a service provider with QPS limitations
-pub trait Provider: Send + Sync + 'static {
-    /// Unique identifier for the provider
-    fn provider_id(&self) -> ApiProvider;
+    /// Get namespace for this provider (`provider.protocol.api_name`)
+    pub fn config_namespace(&self, protocol: crate::api::Protocol, api_name: &str) -> String {
+        format!(
+            "{}.{}.{}",
+            self.id(),
+            protocol.to_string().to_lowercase(),
+            api_name
+        )
+    }
 
-    /// Get the executor for this provider
-    fn get_executor(&self) -> Arc<QpsLimitedExecutor> {
-        let provider = self.provider_id();
-        Arc::new(QpsLimitedExecutor::new(provider))
+    /// Get the environment variable prefix for authentication
+    /// (e.g., `API_MXNZP_APP_ID`)
+    pub fn auth_env_prefix(&self) -> String {
+        format!("API_{}", self.id().to_uppercase())
     }
 }
 
-/// Request that can be executed through a provider
+/// Request that can be executed through a provider (protocol-agnostic)
 #[expect(async_fn_in_trait)]
-pub trait ProviderRequest: Send + 'static
-where
-    for<'de> Self::Response: Deserialize<'de>,
-{
+pub trait ProviderRequest: Send + 'static {
     type Response: ProviderResponse;
 
-    /// Execute the actual HTTP request
-    async fn execute(self, common: &ApiCommon) -> anyhow::Result<Self::Response>;
+    /// Execute the actual request (protocol-agnostic)
+    async fn execute(self) -> anyhow::Result<Self::Response>;
 }
 
-// #[expect(async_fn_in_trait)]
-pub trait ProviderResponse: Send + 'static
-where
-    for<'de> Self: Deserialize<'de>,
-{
-    type Data: for<'de> Deserialize<'de>;
+/// Response from a provider request (protocol-agnostic)
+pub trait ProviderResponse: Send + 'static {
+    type Data;
 
     fn get_code(&self) -> i32;
     fn get_msg(&self) -> String;
     fn get_data(&self) -> Option<&Self::Data>;
+}
+
+/// Provider trait with embedded QPS-limited executor
+pub trait Provider: Send + Sync + 'static {
+    /// Get the provider type
+    fn provider_type(&self) -> ApiProvider;
+
+    /// Get the embedded executor for this provider
+    fn executor(&self) -> &QpsLimitedExecutor;
+
+    /// Create `ApiCommon` for a specific API
+    fn create_api_common(&self, protocol: Protocol, api_name: &str) -> anyhow::Result<ApiCommon> {
+        let provider_type = self.provider_type();
+
+        let api = crate::api::config::API_CONFIG
+            .as_ref()
+            .map_err(|e| anyhow::anyhow!("Failed to load API config: {}", e))?
+            .get_api_config(provider_type, protocol, api_name)?;
+
+        let common = ApiCommon {
+            name: api.api_name().to_owned(),
+            protocol,
+            url: api.base_url().to_owned(),
+            timeout_ms: api.timeout_ms(),
+        };
+
+        Ok(common)
+    }
+
+    /// Execute a request with QPS limiting
+    #[expect(async_fn_in_trait)]
+    async fn execute_request<R>(&self, request: R) -> anyhow::Result<R::Response>
+    where
+        R: ProviderRequest,
+    {
+        self.executor().execute(request).await
+    }
 }
 
 /// QPS-limited executor that manages request queues and rate limiting
@@ -86,7 +124,7 @@ impl QpsLimitedExecutor {
     }
 
     /// Execute a request with QPS limiting
-    pub async fn execute<R>(&self, request: R, common: &ApiCommon) -> anyhow::Result<R::Response>
+    pub async fn execute<R>(&self, request: R) -> anyhow::Result<R::Response>
     where
         R: ProviderRequest,
     {
@@ -117,7 +155,7 @@ impl QpsLimitedExecutor {
         log::debug!("Executing request for provider: {}", self.provider.id());
 
         // Execute the actual request
-        request.execute(common).await
+        request.execute().await
     }
 
     async fn calculate_delay(&self) -> Duration {
@@ -140,17 +178,3 @@ impl QpsLimitedExecutor {
         }
     }
 }
-
-/// Macro to implement Provider for a type
-#[macro_export]
-macro_rules! impl_provider {
-    ($type:ty, $provider:expr) => {
-        impl $crate::request::provider::Provider for $type {
-            fn provider_id(&self) -> $crate::request::provider::ApiProvider {
-                $provider
-            }
-        }
-    };
-}
-
-pub use impl_provider;

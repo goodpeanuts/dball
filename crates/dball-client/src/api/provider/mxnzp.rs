@@ -1,88 +1,94 @@
-use crate::{impl_api_factory, impl_provider, request::factory::ApiFactory as _};
-use latest_ticket::GeneralLatestLotteryResponse;
-use latest_ticket::create_lottery_request;
-use specified_ticket::GeneralSpecifiedLotteryResponse;
-use specified_ticket::create_specified_lottery_request;
+use std::sync::LazyLock;
 
-pub mod common;
-pub mod latest_ticket;
-pub mod specified_ticket;
+use strum_macros::Display;
+
+use super::{Provider, QpsLimitedExecutor};
+use crate::api::provider::ApiProvider;
+use crate::parse_from_env;
 
 /// Global MXNZP provider instance
-pub static MXNZP_PROVIDER: MxnzpProvider = MxnzpProvider;
+pub static MXNZP_PROVIDER: LazyLock<MxnzpProvider> = LazyLock::new(|| MxnzpProvider {
+    app_id: parse_from_env("MXNZP_APP_ID"),
+    app_secret: parse_from_env("MXNZP_APP_SECRET"),
+    executor: QpsLimitedExecutor::new(ApiProvider::Mxnzp),
+});
 
-impl_provider!(MxnzpProvider, crate::request::provider::ApiProvider::Mxnzp);
-impl_api_factory!(MxnzpProvider);
+pub const RETURN_CODE_SUCCESS: i32 = 1;
 
-/// MXNZP API provider with QPS limit of 1
-#[derive(Debug, Clone, Copy)]
-pub struct MxnzpProvider;
+/// MXNZP API provider with embedded QPS executor
+#[derive(Debug)]
+pub struct MxnzpProvider {
+    app_id: Option<String>,
+    app_secret: Option<String>,
+    executor: QpsLimitedExecutor,
+}
+
+#[derive(Display)]
+pub enum MxnzpApi {
+    #[strum(to_string = "get_latest_lottery")]
+    GetLatestLottery,
+    #[strum(to_string = "get_specified_lottery")]
+    GetSpecifiedLottery,
+}
 
 impl MxnzpProvider {
-    /// Create a new MXNZP provider instance
-    pub fn new() -> Self {
-        Self
-    }
-
-    /// Execute latest lottery request with QPS limiting
-    pub async fn get_latest_lottery(&self) -> anyhow::Result<GeneralLatestLotteryResponse> {
-        let request = create_lottery_request().state;
-        let factory_request = self.create_request(request);
-
-        // Get the common config from the original implementation
-        factory_request
-            .execute(&latest_ticket::GENERAL_LATEST_LOTTERY_API_COMMON)
-            .await
-    }
-
-    /// Execute specified lottery request with QPS limiting
-    pub async fn get_specified_lottery(
-        &self,
-        expect: &str,
-    ) -> anyhow::Result<GeneralSpecifiedLotteryResponse> {
-        let request = create_specified_lottery_request(expect.to_owned()).state;
-        let factory_request = self.create_request(request);
-
-        // Get the common config from the original implementation
-        factory_request
-            .execute(&specified_ticket::GENERAL_SPECIFIED_LOTTERY_API_COMMON)
-            .await
+    /// return the authentication configuration
+    pub fn get_auth_config(&self) -> anyhow::Result<(String, String)> {
+        if let (Some(app_id), Some(app_secret)) = (self.app_id.as_ref(), self.app_secret.as_ref()) {
+            Ok((app_id.clone(), app_secret.clone()))
+        } else {
+            Err(anyhow::anyhow!(
+                "Missing app_id or app_secret in MXNZP provider"
+            ))
+        }
     }
 }
 
-impl Default for MxnzpProvider {
-    fn default() -> Self {
-        Self::new()
+impl Provider for MxnzpProvider {
+    fn provider_type(&self) -> ApiProvider {
+        ApiProvider::Mxnzp
+    }
+
+    fn executor(&self) -> &QpsLimitedExecutor {
+        &self.executor
     }
 }
 
 #[cfg(test)]
 mod tests {
+    use crate::api::provider::ProviderResponse;
     use crate::models::Ticket;
-    use crate::request::provider::{Provider, ProviderResponse};
     use std::time::Instant;
 
     use super::*;
 
     #[tokio::test]
     async fn test_mxnzp_latest_lottery() {
-        // QPS: 1
         let resp = MXNZP_PROVIDER.get_latest_lottery().await;
 
         if let Ok(response) = resp {
-            if let Some(data) = response.data {
-                let ticket = Ticket::try_from(data);
-                assert!(ticket.is_ok(), "Failed to convert LotteryData to Ticket");
-            } else {
-                panic!("Failed to get latest lottery");
-            };
+            assert_eq!(response.get_code(), 1);
+            let data = response.get_data();
+            assert!(data.is_some());
+
+            let data = data.unwrap();
+            log::debug!("data: {data:#?}");
+
+            // 使用 try_from 进行正确的类型转换
+            let ticket = Ticket::try_from(data);
+            assert!(ticket.is_ok(), "Failed to convert LotteryData to Ticket");
+            if let Ok(ticket) = ticket {
+                log::debug!("converted ticket: {ticket:#?}");
+            }
+        } else if let Err(e) = resp {
+            log::warn!(
+                "Failed to get lottery data (this is expected if config is not set up): {e}"
+            );
         }
     }
 
     #[tokio::test]
     async fn test_mxnzp_specified_lottery() {
-        // QPS: 1
-
         let expect = "2025084";
         let resp = MXNZP_PROVIDER.get_specified_lottery(expect).await;
 
@@ -99,17 +105,19 @@ mod tests {
                 panic!("Failed to get specified lottery");
             };
         } else if let Err(e) = resp {
-            panic!("API request failed: {e}");
+            log::warn!(
+                "Failed to get specified lottery data (this is expected if config is not set up): {e}"
+            );
         }
     }
 
     #[tokio::test]
     async fn test_qps_limiting() {
-        let provider = &MXNZP_PROVIDER;
+        let provider = &*MXNZP_PROVIDER;
 
         log::info!(
             "Testing QPS limiting with {} QPS limit",
-            provider.provider_id().qps_limit()
+            provider.provider_type().qps_limit()
         );
 
         let start_time = Instant::now();

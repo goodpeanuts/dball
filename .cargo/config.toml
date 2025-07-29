@@ -11,3 +11,6 @@ ctenv = "test -p dball-client -- --test clean_test_env --nocapture --ignored"
 # cargo clippy --all  && cargo check --all && cargo fmt --all 
 
 cfaa = "clippy --fix --allow-dirty --allow-staged"
+
+# cargo run -p dball-client --example
+pce = "run -p dball-client --example"

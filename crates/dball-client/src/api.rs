@@ -1,12 +1,13 @@
 use std::{str::FromStr, sync::LazyLock};
 
-pub mod config;
-pub mod fix;
-pub mod provider;
-pub mod rest;
-pub mod websocket;
+mod config;
+mod fix;
+mod provider;
+mod rest;
+mod websocket;
 
 pub use provider::mxnzp::MXNZP_PROVIDER;
+pub use provider::{ProviderRequest, ProviderResponse};
 use serde::{Deserialize, Serialize};
 use strum_macros::{Display, EnumIter};
 

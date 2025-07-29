@@ -26,7 +26,7 @@ pub enum ApiProvider {
 
 impl ApiProvider {
     /// Get the QPS limit for this provider
-    pub fn qps_limit(&self) -> u32 {
+    pub fn qps_limit(&self) -> usize {
         match self {
             Self::Mxnzp => 1,
             Self::Binance => 10,
@@ -44,6 +44,7 @@ impl ApiProvider {
     }
 
     /// Get namespace for this provider (`provider.protocol.api_name`)
+    #[expect(unused)]
     pub fn config_namespace(&self, protocol: crate::api::Protocol, api_name: &str) -> String {
         format!(
             "{}.{}.{}",
@@ -55,6 +56,7 @@ impl ApiProvider {
 
     /// Get the environment variable prefix for authentication
     /// (e.g., `API_MXNZP_APP_ID`)
+    #[expect(unused)]
     pub fn auth_env_prefix(&self) -> String {
         format!("API_{}", self.id().to_uppercase())
     }
@@ -106,7 +108,6 @@ pub trait Provider: Send + Sync + 'static {
     }
 
     /// Execute a request with QPS limiting
-    #[expect(async_fn_in_trait)]
     async fn execute_request<R>(&self, request: R) -> anyhow::Result<R::Response>
     where
         R: ProviderRequest,
@@ -128,7 +129,7 @@ impl QpsLimitedExecutor {
         let qps_limit = provider.qps_limit();
         Self {
             provider,
-            semaphore: Arc::new(Semaphore::new(qps_limit as usize)),
+            semaphore: Arc::new(Semaphore::new(qps_limit)),
             last_request_time: Arc::new(Mutex::new(Instant::now())),
         }
     }
@@ -138,15 +139,43 @@ impl QpsLimitedExecutor {
     where
         R: ProviderRequest,
     {
-        // Acquire semaphore permit
+        // Acquire semaphore permit to ensure serial execution
         let _permit = self
             .semaphore
             .acquire()
             .await
             .map_err(|e| anyhow::anyhow!("Failed to acquire semaphore permit: {}", e))?;
 
-        // Calculate delay needed to respect QPS limit
-        let delay = self.calculate_delay().await;
+        // Calculate delay and update last request time atomically
+        let delay = {
+            let mut last_time = self.last_request_time.lock().await;
+            let elapsed = last_time.elapsed();
+            let qps = self.provider.qps_limit();
+
+            if qps == 0 {
+                log::warn!(
+                    "QPS limit for provider {} is 0, skipping delay calculation to avoid division by zero.",
+                    self.provider.id()
+                );
+                Duration::ZERO
+            } else {
+                // Calculate minimum interval between requests (1 second / QPS)
+                let min_interval = Duration::from_secs_f64(1.0 / qps as f64);
+
+                if elapsed < min_interval {
+                    let delay = min_interval - elapsed;
+                    // Update last request time to include the delay
+                    *last_time = Instant::now() + delay;
+                    delay
+                } else {
+                    // Update last request time to now
+                    *last_time = Instant::now();
+                    Duration::ZERO
+                }
+            }
+        };
+
+        // Apply delay if needed
         if delay > Duration::ZERO {
             log::debug!(
                 "Provider {} QPS limiting: waiting {:?}",
@@ -156,36 +185,10 @@ impl QpsLimitedExecutor {
             tokio::time::sleep(delay).await;
         }
 
-        // Update last request time
-        {
-            let mut last_time = self.last_request_time.lock().await;
-            *last_time = Instant::now();
-        }
-
         log::debug!("Executing request for provider: {}", self.provider.id());
 
         // Execute the actual request
         request.execute().await
-    }
-
-    async fn calculate_delay(&self) -> Duration {
-        let last_time = self.last_request_time.lock().await;
-        let elapsed = last_time.elapsed();
-        let qps = self.provider.qps_limit();
-        if qps == 0 {
-            log::warn!(
-                "QPS limit for provider {} is 0, skipping delay calculation to avoid division by zero.",
-                self.provider.id()
-            );
-            return Duration::ZERO;
-        }
-        let min_interval = Duration::from_secs_f64(1.0 / qps as f64);
-
-        if elapsed < min_interval {
-            min_interval - elapsed
-        } else {
-            Duration::ZERO
-        }
     }
 }
 

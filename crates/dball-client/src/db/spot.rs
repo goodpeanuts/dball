@@ -6,7 +6,7 @@ use diesel::prelude::*;
 
 /// Insert a new spot from `DBall`
 pub fn insert_spot_from_dball(
-    period: String,
+    period: &str,
     dball: &DBall,
     prize_status: Option<i32>,
 ) -> anyhow::Result<()> {
@@ -347,7 +347,7 @@ mod test {
             .map_err(|e| anyhow::anyhow!("DBall creation failed: {e}"))?;
         let period = "2025085".to_string();
 
-        match insert_spot_from_dball(period.clone(), &dball, None) {
+        match insert_spot_from_dball(&period, &dball, None) {
             Ok(()) => {
                 log::info!("Successfully inserted spot from DBall");
 

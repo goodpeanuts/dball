@@ -29,7 +29,7 @@ pub struct Spot {
 impl Spot {
     /// Create a new spot from `DBall` for insertion (id will be None)
     pub fn from_dball(
-        period: String,
+        period: &str,
         dball: &DBall,
         prize_status: Option<i32>,
     ) -> Result<Self, SpotError> {
@@ -41,7 +41,7 @@ impl Spot {
 
         Ok(Self {
             id: None,
-            period,
+            period: period.to_owned(),
             red1: dball.rball[0] as i32,
             red2: dball.rball[1] as i32,
             red3: dball.rball[2] as i32,
@@ -257,7 +257,7 @@ mod test {
     fn create_spot_from_dball() -> anyhow::Result<()> {
         let dball = DBall::new(vec![2, 6, 7, 13, 16, 28], 11, 1)
             .map_err(|e| anyhow::anyhow!("DBall creation failed: {}", e))?;
-        let test_spot = Spot::from_dball("2025084".to_string(), &dball, None)?;
+        let test_spot = Spot::from_dball("2025084", &dball, None)?;
 
         log::info!("created spot success: {test_spot}");
         assert_eq!(test_spot.period, "2025084");
@@ -273,7 +273,7 @@ mod test {
     fn create_spot_from_dball_with_prize() -> anyhow::Result<()> {
         let dball = DBall::new(vec![2, 6, 7, 13, 16, 28], 11, 1)
             .map_err(|e| anyhow::anyhow!("DBall creation failed: {}", e))?;
-        let test_spot = Spot::from_dball("2025084".to_string(), &dball, Some(1))?;
+        let test_spot = Spot::from_dball("2025084", &dball, Some(1))?;
 
         assert_eq!(test_spot.prize_status, Some(1));
         // Test basic data access only
@@ -287,7 +287,7 @@ mod test {
     fn create_spot_with_empty_period() -> anyhow::Result<()> {
         let dball = DBall::new(vec![2, 6, 7, 13, 16, 28], 11, 1)
             .map_err(|e| anyhow::anyhow!("DBall creation failed: {}", e))?;
-        let result = Spot::from_dball("".to_string(), &dball, None);
+        let result = Spot::from_dball("", &dball, None);
         assert!(matches!(result, Err(SpotError::EmptyPeriod)));
         Ok(())
     }
@@ -296,7 +296,7 @@ mod test {
     fn test_spot_to_dball_conversion() -> anyhow::Result<()> {
         let original_dball = DBall::new(vec![2, 6, 7, 13, 16, 28], 11, 2)
             .map_err(|e| anyhow::anyhow!("DBall creation failed: {}", e))?;
-        let test_spot = Spot::from_dball("2025084".to_string(), &original_dball, None)?;
+        let test_spot = Spot::from_dball("2025084", &original_dball, None)?;
 
         let converted_dball = test_spot.to_dball()?;
         assert_eq!(converted_dball.rball, [2, 6, 7, 13, 16, 28]);
@@ -310,7 +310,7 @@ mod test {
     fn test_try_from_conversions() -> anyhow::Result<()> {
         let original_dball = DBall::new(vec![2, 6, 7, 13, 16, 28], 11, 1)
             .map_err(|e| anyhow::anyhow!("DBall creation failed: {}", e))?;
-        let test_spot = Spot::from_dball("2025084".to_string(), &original_dball, None)?;
+        let test_spot = Spot::from_dball("2025084", &original_dball, None)?;
 
         // Test TryFrom Spot to DBall
         let dball_from_spot: DBall = test_spot.clone().try_into()?;
@@ -338,7 +338,7 @@ mod test {
     fn test_spot_basic_methods() -> anyhow::Result<()> {
         let dball = DBall::new(vec![2, 6, 7, 13, 16, 28], 11, 1)
             .map_err(|e| anyhow::anyhow!("DBall creation failed: {}", e))?;
-        let test_spot = Spot::from_dball("2025084".to_string(), &dball, None)?;
+        let test_spot = Spot::from_dball("2025084", &dball, None)?;
 
         // Test basic getter methods
         assert_eq!(test_spot.red_numbers(), vec![2, 6, 7, 13, 16, 28]);

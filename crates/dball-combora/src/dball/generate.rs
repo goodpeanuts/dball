@@ -1,4 +1,7 @@
+use crate::checker::DBallChecker;
+use crate::dball::def::DBallBatch;
 use crate::dball::{DBall, DBallError};
+use crate::generator::RandomGenerator;
 use std::collections::HashSet;
 
 /// Generate a random number with a simple linear congruential generator
@@ -14,6 +17,66 @@ fn get_time_seed() -> u64 {
         .duration_since(UNIX_EPOCH)
         .unwrap_or_default()
         .as_nanos() as u64
+}
+
+impl RandomGenerator for DBall {
+    fn generate_batch() -> anyhow::Result<[Self; 5]> {
+        use rand::Rng as _;
+        let mut rng = rand::thread_rng();
+        let mut try_count = 0;
+        let mut selected_tickets = Vec::new();
+
+        let batch = loop {
+            while selected_tickets.len() < 5 {
+                let tickets = Self::generate_multiple(9544);
+
+                let should_pick = rng.gen_bool(0.1004);
+
+                if should_pick && !tickets.is_empty() {
+                    let random_index = rng.gen_range(0..tickets.len());
+                    let selected = tickets[random_index].clone();
+                    selected_tickets.push(selected);
+                }
+            }
+            let batch = DBallBatch(selected_tickets.clone());
+            let score = Self::evaluate_batch(&batch);
+            try_count += 1;
+            if rng.gen_bool(score) {
+                log::info!("Generated batch with score {score} after {try_count} tries",);
+                break batch;
+            } else {
+                log::debug!("Batch with {score} failed, retrying...");
+                selected_tickets.clear();
+            }
+        };
+
+        batch.to_batch()
+    }
+
+    fn evaluate_batch(batch: &DBallBatch) -> f64 {
+        let mut score = 1.0;
+        let mut checks = batch.evaluate();
+        batch.0.iter().for_each(|ball| {
+            checks.extend(ball.evaluate());
+        });
+
+        #[expect(clippy::match_same_arms)]
+        checks.iter().for_each(|e| match e {
+            DBallChecker::AllSingleDigits => score *= 0.0321,
+            DBallChecker::TooConcentrated => score *= 0.0830,
+            DBallChecker::AllEvenOrOdd => score *= 0.2003,
+            DBallChecker::RedConflictsWithBlue => score *= 0.9544,
+            DBallChecker::AvgExtreme => score *= 0.0830,
+            DBallChecker::SumExtreme => score *= 0.1027,
+            DBallChecker::RangeExtreme => score *= 0.0321,
+            DBallChecker::BatchHasDuplicateCombinations => score *= 0.1027,
+            DBallChecker::BatchTopRedNumberFrequencies => score *= 0.9544,
+            DBallChecker::BatchBlueBallDistribution => score *= 0.0921,
+            DBallChecker::BatchHighCosineSimilarity => score *= 0.0321,
+        });
+
+        score
+    }
 }
 
 impl DBall {

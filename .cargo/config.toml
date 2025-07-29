@@ -14,3 +14,6 @@ cfaa = "clippy --fix --allow-dirty --allow-staged"
 
 # cargo run -p dball-client --example
 pce = "run -p dball-client --example"
+
+# cargo run -p dball-combora --example
+poe = "run -p dball-combora --example"

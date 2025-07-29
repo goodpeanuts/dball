@@ -1015,7 +1015,9 @@ version = "0.1.0"
 dependencies = [
  "ansi_term",
  "anyhow",
+ "env_logger",
  "getrandom 0.2.16",
+ "log",
  "rand 0.8.5",
 ]
 

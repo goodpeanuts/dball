@@ -2,4 +2,4 @@ pub mod check;
 mod def;
 pub mod generate;
 
-pub use def::{DBall, DBallError, Reward};
+pub use def::{DBall, DBallBatch, DBallError, Reward};

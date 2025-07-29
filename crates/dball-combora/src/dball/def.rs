@@ -29,6 +29,57 @@ impl Display for DBall {
     }
 }
 
+/// Wrapper type for displaying a vector of `DBall`
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct DBallBatch(pub Vec<DBall>);
+
+impl DBallBatch {
+    pub fn to_batch(self) -> anyhow::Result<[DBall; 5]> {
+        self.0.try_into().map_err(|e| {
+            anyhow::anyhow!("Failed to convert Vec<DBall> to [DBall; 5]:\n{}", Self(e))
+        })
+    }
+
+    pub fn cosine_similarity(&self) -> Vec<f32> {
+        fn calc_cosine_similarity(a: &[f32], b: &[f32]) -> f32 {
+            let dot = a.iter().zip(b.iter()).map(|(x, y)| x * y).sum::<f32>();
+            let norm_a = a.iter().map(|x| x * x).sum::<f32>().sqrt();
+            let norm_b = b.iter().map(|x| x * x).sum::<f32>().sqrt();
+
+            if norm_a == 0.0 || norm_b == 0.0 {
+                0.0
+            } else {
+                dot / (norm_a * norm_b)
+            }
+        }
+
+        let vectors: Vec<_> = self.0.iter().map(DBall::to_vector).collect();
+        let len = vectors.len();
+        let mut sims = Vec::new();
+
+        for i in 0..len {
+            for j in i + 1..len {
+                sims.push(calc_cosine_similarity(&vectors[i], &vectors[j]));
+            }
+        }
+        sims
+    }
+}
+
+impl Display for DBallBatch {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "{}",
+            self.0
+                .iter()
+                .map(|ball| ball.to_string())
+                .collect::<Vec<_>>()
+                .join("\n")
+        )
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum DBallError {
     InvalidRBallCount(usize),
@@ -111,6 +162,18 @@ impl DBall {
 
     pub fn cost(&self) -> usize {
         self.magnification * COST_PER_TICKET
+    }
+
+    /// Convert a `DBall` to a vector representation for cosine calculations
+    /// Red balls are represented as indices 0-32 (1-33)
+    /// Blue ball is represented as index 33-48 (1-16)
+    pub fn to_vector(ball: &Self) -> Vec<f32> {
+        let mut vec = vec![0.0f32; 49];
+        for &num in &ball.rball {
+            vec[(num - 1) as usize] = 1.0;
+        }
+        vec[(ball.bball - 1 + 33) as usize] = 1.0;
+        vec
     }
 }
 

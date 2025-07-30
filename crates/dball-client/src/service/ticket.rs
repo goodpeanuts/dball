@@ -2,6 +2,14 @@ use crate::models::Ticket;
 use chrono::Datelike as _;
 const YEAR_MODULO: usize = 100;
 
+/// Get the next period based on the latest ticket
+pub async fn get_next_period() -> anyhow::Result<String> {
+    let latest_period = update_latest_ticket().await?;
+    let next_period = latest_period.parse::<i32>()? + 1;
+    log::debug!("Latest period is {latest_period}, next period is {next_period}");
+    Ok(next_period.to_string())
+}
+
 pub async fn crawl_all_tickets() -> anyhow::Result<()> {
     const YEARS: [usize; 23] = [
         2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014, 2015, 2016, 2017,
@@ -46,6 +54,8 @@ pub async fn update_tickets_with_year(year: usize) -> anyhow::Result<()> {
     Ok(())
 }
 
+/// Request and insert latest tickets
+/// Return the newest period
 pub async fn update_latest_ticket() -> anyhow::Result<String> {
     use crate::api::MXNZP_PROVIDER;
     use crate::db::tickets;
@@ -62,7 +72,7 @@ pub async fn update_latest_ticket() -> anyhow::Result<String> {
     if let Some(query_ticket) = query_tickets {
         if query_ticket == request_latest_ticket {
             log::info!("Latest ticket is up to date");
-            Ok(request_latest_ticket.get_5_digit_period())
+            Ok(request_latest_ticket.period)
         } else {
             anyhow::bail!(
                 "Latest ticket mismatch - database: {}, API: {}",
@@ -76,7 +86,7 @@ pub async fn update_latest_ticket() -> anyhow::Result<String> {
             "Latest ticket {} updated successfully",
             request_latest_ticket.period
         );
-        Ok(request_latest_ticket.get_5_digit_period())
+        Ok(request_latest_ticket.period)
     }
 }
 

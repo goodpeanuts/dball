@@ -5,7 +5,7 @@ use crate::service::ticket::update_this_year_ticket;
 use dball_combora::dball::DBall;
 use std::collections::HashMap;
 
-use super::update_latest_ticket;
+use super::ticket;
 
 pub async fn update_all_unprize_spots() -> anyhow::Result<()> {
     let spots = spot::get_all_unprize_spots()?;
@@ -79,11 +79,33 @@ pub async fn update_all_unprize_spots() -> anyhow::Result<()> {
 }
 
 pub async fn insert_new_spots_next_period(dballs: &[DBall]) -> anyhow::Result<()> {
-    let next_period = update_latest_ticket().await?;
+    let next_period = ticket::get_next_period().await?;
+
     for dball in dballs {
         spot::insert_spot_from_dball(&next_period, dball, None)?;
     }
     Ok(())
+}
+
+#[expect(unused)]
+pub async fn get_latest_unprized_spots() -> anyhow::Result<Vec<DBall>> {
+    use crate::db::spot;
+    let next_period = ticket::get_next_period().await?;
+
+    let spots = spot::get_spots_by_period(&next_period)?;
+    if spots.is_empty() {
+        log::debug!("No unprized spots found");
+        return Ok(vec![]);
+    }
+
+    let dballs = spots
+        .into_iter()
+        .map(|s| {
+            s.to_dball()
+                .map_err(|e| anyhow::anyhow!("Failed to convert spot to DBall: {e}"))
+        })
+        .collect::<anyhow::Result<Vec<DBall>>>()?;
+    Ok(dballs)
 }
 
 #[cfg(test)]

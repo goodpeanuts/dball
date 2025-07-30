@@ -174,10 +174,6 @@ impl Ticket {
             self.red1, self.red2, self.red3, self.red4, self.red5, self.red6, self.blue
         )
     }
-
-    pub fn get_5_digit_period(&self) -> String {
-        self.period[2..].to_string()
-    }
 }
 
 /// Ticket validation error types

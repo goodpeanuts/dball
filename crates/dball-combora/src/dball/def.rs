@@ -84,7 +84,7 @@ impl Display for DBallBatch {
 pub enum DBallError {
     InvalidRBallCount(usize),
     InvalidBBall(u8),
-    InvaildRBallRange((u8, u8)),
+    InvalidRBallRange((u8, u8)),
     RBallOutOfRange(u8),
     RBallDuplicate,
 }
@@ -102,7 +102,7 @@ impl Display for DBallError {
             Self::InvalidBBall(ball) => {
                 write!(f, "Blue ball {ball} is out of range (1-16)")
             }
-            Self::InvaildRBallRange((min, max)) => {
+            Self::InvalidRBallRange((min, max)) => {
                 write!(
                     f,
                     "Red ball range must at least contain 6 numbers, but got: {min}-{max}",

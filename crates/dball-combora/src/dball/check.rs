@@ -1,26 +1,5 @@
 use crate::dball::{DBall, Reward};
 
-/// # Usage Example
-/// ```
-/// use dball_combora::dball::DBall;
-///
-/// // Generate random ticket
-/// let ticket = DBall::generate_random();
-///
-/// // Mock winning ticket
-/// let mut rball = [1, 2, 3, 4, 5, 6];
-/// let winning_ticket = DBall::new_one(&mut rball[..], 7).unwrap();
-///
-/// // Check prize level
-/// let reward = ticket.check_prize(&winning_ticket);
-/// println!("Prize level: {}, Amount: {} yuan", reward.description(), reward.prize_amount());
-///
-/// // Check multiple tickets
-/// let tickets = vec![ticket];
-/// let results = DBall::check_multiple_tickets(&tickets, &winning_ticket);
-/// let total_prize = DBall::calculate_total_prize(&tickets, &winning_ticket);
-/// let prize_counts = DBall::count_prizes_list(&tickets, &winning_ticket);
-/// ```
 impl DBall {
     /// Check prize level
     ///
@@ -90,6 +69,8 @@ impl DBall {
 
 #[cfg(test)]
 mod tests {
+    use crate::generator::bluemorn::BlueMorn;
+
     use super::*;
 
     fn create_test_ticket(rball: [u8; 6], bball: u8) -> DBall {
@@ -235,8 +216,8 @@ mod tests {
     #[test]
     fn test_generator_with_seed() {
         // Using fixed seed should produce repeatable results
-        let ticket1 = DBall::generate_with_seed(12345);
-        let ticket2 = DBall::generate_with_seed(12345);
+        let ticket1 = BlueMorn::generate_with_seed(12345);
+        let ticket2 = BlueMorn::generate_with_seed(12345);
 
         // Compare red balls as sets since they are sorted in the constructor
         use std::collections::HashSet;
@@ -249,7 +230,7 @@ mod tests {
 
     #[test]
     fn test_generator_red_range() {
-        let result = DBall::generate_with_red_range(1, 10, Some(5));
+        let result = BlueMorn::generate_with_red_range(1, 10, Some(5));
         assert!(result.is_ok());
 
         let ticket = result.unwrap();
@@ -261,11 +242,11 @@ mod tests {
 
     #[test]
     fn test_generator_red_range_invalid() {
-        let result = DBall::generate_with_red_range(1, 5, Some(5));
+        let result = BlueMorn::generate_with_red_range(1, 5, Some(5));
         assert!(result.is_err());
         assert_eq!(
             result,
-            Err(crate::dball::DBallError::InvaildRBallRange((1, 5)))
+            Err(crate::dball::DBallError::InvalidRBallRange((1, 5)))
         );
     }
 

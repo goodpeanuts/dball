@@ -18,12 +18,13 @@ resolver = "2"
 
 [features]
 default = []
-terminal = []
+terminal = ["iocraft"]
 
 [dependencies]
 # workspace member:
 dball-combora ={ path = "crates/dball-combora" }
 
+iocraft = {version = "0.7" , optional = true}
 egui = "0.32"
 eframe = { version = "0.32", default-features = false, features = [
     "accesskit",     # Make egui compatible with screen readers. NOTE: adds a lot of dependencies.
@@ -37,7 +38,8 @@ log = "0.4.27"
 
 anyhow = "1"
 dotenvy = "0.15"
-
+tokio = { version = "1", features = ["full"] }
+chrono = "0.4"
 
 # You only need serde if you want app persistence:
 serde = { version = "1.0.219", features = ["derive"] }

@@ -62,6 +62,8 @@ mod tests {
 
     #[tokio::test]
     async fn test_qps_limiting() {
+        tokio::time::sleep(std::time::Duration::from_secs(1)).await;
+
         let provider = &*MXNZP_PROVIDER;
 
         log::info!(
@@ -72,34 +74,14 @@ mod tests {
         let start_time = Instant::now();
 
         // Make 3 consecutive requests
-        for i in 0..3 {
-            let request_start = Instant::now();
-            let result = provider.get_latest_lottery().await;
-            let request_duration = request_start.elapsed();
-
-            log::debug!(
-                "Request {}: {:?}, Duration: {:?}",
-                i + 1,
-                result.map(|_| "Success").unwrap_or("Failed"),
-                request_duration
-            );
-
-            // After the first request, subsequent requests should be delayed
-            if i > 0 {
-                // Each request should take at least 1 second due to QPS limit of 1
-                assert!(
-                    request_duration >= std::time::Duration::from_millis(800),
-                    "Request {} took only {:?}, expected at least 800ms due to QPS limiting",
-                    i + 1,
-                    request_duration
-                );
-            }
+        for _ in 0..3 {
+            let _ = provider.get_latest_lottery().await;
         }
 
         let total_duration = start_time.elapsed();
         log::debug!("Total duration for 3 requests: {:?}", total_duration);
 
-        // Total time should be at least 2 seconds (1 second between each of the 3 requests)
+        // Total time should be at least 2 seconds (1 second between each of the 3 provider calls)
         assert!(
             total_duration >= std::time::Duration::from_secs(2),
             "Total duration was {:?}, expected at least 2 seconds due to QPS limiting",

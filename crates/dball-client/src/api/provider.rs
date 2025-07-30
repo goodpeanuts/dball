@@ -146,9 +146,9 @@ impl QpsLimitedExecutor {
             .await
             .map_err(|e| anyhow::anyhow!("Failed to acquire semaphore permit: {}", e))?;
 
-        // Calculate delay and update last request time atomically
+        // Calculate delay based on last request time
         let delay = {
-            let mut last_time = self.last_request_time.lock().await;
+            let last_time = self.last_request_time.lock().await;
             let elapsed = last_time.elapsed();
             let qps = self.provider.qps_limit();
 
@@ -163,13 +163,8 @@ impl QpsLimitedExecutor {
                 let min_interval = Duration::from_secs_f64(1.0 / qps as f64);
 
                 if elapsed < min_interval {
-                    let delay = min_interval - elapsed;
-                    // Update last request time to include the delay
-                    *last_time = Instant::now() + delay;
-                    delay
+                    min_interval - elapsed
                 } else {
-                    // Update last request time to now
-                    *last_time = Instant::now();
                     Duration::ZERO
                 }
             }
@@ -185,10 +180,16 @@ impl QpsLimitedExecutor {
             tokio::time::sleep(delay).await;
         }
 
-        log::debug!("Executing request for provider: {}", self.provider.id());
+        let response = request.execute().await;
 
-        // Execute the actual request
-        request.execute().await
+        // Update last request time to now (right before execution)
+        {
+            let mut last_time = self.last_request_time.lock().await;
+            *last_time = Instant::now();
+        }
+
+        log::debug!("Executing request for provider: {}", self.provider.id());
+        response
     }
 }
 

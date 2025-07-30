@@ -23,7 +23,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_update_all_spots() {
-        // 首先尝试更新最新票据
+        tokio::time::sleep(tokio::time::Duration::from_secs(1)).await;
         match update_latest_ticket().await {
             Ok(_) => log::info!("Latest ticket updated successfully"),
             Err(e) => {

@@ -3,7 +3,6 @@ use std::collections::{HashMap, HashSet};
 
 pub enum DBallChecker {
     AllSingleDigits,
-    TooConcentrated,
     AllEvenOrOdd,
     RedConflictsWithBlue,
     AvgExtreme,
@@ -23,12 +22,6 @@ impl DBall {
             .then_some(DBallChecker::AllSingleDigits)
     }
 
-    pub fn is_too_concentrated(&self) -> Option<DBallChecker> {
-        let min = *self.rball.iter().min().unwrap_or(&0);
-        let max = *self.rball.iter().max().unwrap_or(&0);
-        (max - min).lt(&8).then_some(DBallChecker::TooConcentrated)
-    }
-
     pub fn is_all_even_or_odd(&self) -> Option<DBallChecker> {
         (self.rball.iter().all(|&n| n % 2 == 0) || self.rball.iter().all(|&n| n % 2 == 1))
             .then_some(DBallChecker::AllEvenOrOdd)
@@ -42,22 +35,21 @@ impl DBall {
 
     pub fn avg_extreme(&self) -> Option<DBallChecker> {
         let avg = self.rball.iter().copied().sum::<u8>() / 5;
-        (avg < 10 || avg > 20).then_some(DBallChecker::AvgExtreme)
+        (avg < 10 || avg > 21).then_some(DBallChecker::AvgExtreme)
     }
 
-    pub fn is_range_extreme(&self, min_gap: u8, max_gap: u8) -> Option<DBallChecker> {
+    pub fn is_range_extreme(&self) -> Option<DBallChecker> {
+        const MIN_GAP: u8 = 8;
+        const MAX_GAP: u8 = 25;
         let min = *self.rball.iter().min().unwrap_or(&0);
         let max = *self.rball.iter().max().unwrap_or(&33);
         let gap = max - min;
-        (gap < min_gap || gap > max_gap).then_some(DBallChecker::RangeExtreme)
+        (gap < MIN_GAP || gap > MAX_GAP).then_some(DBallChecker::RangeExtreme)
     }
 
     pub fn evaluate(&self) -> Vec<DBallChecker> {
         let mut checks = Vec::new();
         if let Some(check) = self.is_all_single_digits() {
-            checks.push(check);
-        }
-        if let Some(check) = self.is_too_concentrated() {
             checks.push(check);
         }
         if let Some(check) = self.is_all_even_or_odd() {
@@ -66,7 +58,7 @@ impl DBall {
         if let Some(check) = self.red_conflicts_with_blue() {
             checks.push(check);
         }
-        if let Some(check) = self.is_range_extreme(3, 10) {
+        if let Some(check) = self.is_range_extreme() {
             checks.push(check);
         }
         checks

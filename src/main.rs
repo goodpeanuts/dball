@@ -20,13 +20,17 @@ fn main() -> eframe::Result {
     eframe::run_native(
         "double",
         native_options,
-        Box::new(|cc| Ok(Box::new(dball::TemplateApp::new(cc)))),
+        Box::new(|cc| Ok(Box::new(dball::app::eframe::TemplateApp::new(cc)))),
     )
 }
 
 #[cfg(all(not(target_arch = "wasm32"), feature = "terminal"))]
-fn main() {
-    println!("Hello, world!");
+#[tokio::main]
+async fn main() -> anyhow::Result<()> {
+    use dball::terminal::Counter;
+    use iocraft::prelude::*;
+    element!(Counter).render_loop().await?;
+    Ok(())
 }
 
 // When compiling to web using trunk:
@@ -55,7 +59,7 @@ fn main() {
             .start(
                 canvas,
                 web_options,
-                Box::new(|cc| Ok(Box::new(dball::TemplateApp::new(cc)))),
+                Box::new(|cc| Ok(Box::new(dball::app::eframe::TemplateApp::new(cc)))),
             )
             .await;
 

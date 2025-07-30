@@ -9,6 +9,7 @@ use crate::api::{
 
 impl crate::api::provider::mxnzp::MxnzpProvider {
     /// Execute specified lottery request
+    /// expect is a 5-digit period string, e.g. "23001"
     pub async fn get_specified_lottery(
         &self,
         expect: &str,

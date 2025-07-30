@@ -38,7 +38,7 @@ log = "0.4.27"
 
 anyhow = "1"
 dotenvy = "0.15"
-tokio = { version = "1", features = ["full"] }
+tokio = "1"
 chrono = "0.4"
 
 # You only need serde if you want app persistence:

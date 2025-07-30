@@ -22,16 +22,16 @@ pub async fn update_this_year_ticket() -> anyhow::Result<()> {
 
 pub async fn update_tickets_with_year(year: usize) -> anyhow::Result<()> {
     // Get existing periods for this year from database
-    let existing_periods = get_existing_periods_for_year(year)?;
+    let existing_periods_7digit = get_existing_periods_for_year(year)?;
 
-    if let Some(latest_period) = existing_periods.last() {
+    if let Some(latest_period) = existing_periods_7digit.last() {
         log::info!(
             "Found {} existing periods for year {year}",
-            existing_periods.len()
+            existing_periods_7digit.len()
         );
 
         // Fill gaps in existing data
-        update_missing_periods(&existing_periods).await?;
+        update_missing_periods(&existing_periods_7digit).await?;
 
         // Continue from the latest period
         let latest_period = *latest_period;
@@ -88,6 +88,21 @@ pub async fn update_tickets_by_period(period: &str) -> anyhow::Result<bool> {
     use crate::api::ProviderResponse as _;
     use crate::db::tickets;
 
+    // Check if period is longer than 5 digits and truncate if necessary
+    let period = if period.len() > 5 {
+        let period_5digit = &period[period.len() - 5..];
+        log::warn!(
+            "Period {period} is longer than 5 digits, truncating to last 5 digits {period_5digit}"
+        );
+        period_5digit
+    } else {
+        period
+    };
+
+    if period.len() != 5 {
+        anyhow::bail!("MXNZP api request param period must be 5 characters long {period}");
+    }
+
     let request_ticket = MXNZP_PROVIDER
         .get_specified_lottery(period)
         .await?
@@ -139,26 +154,26 @@ fn get_existing_periods_for_year(year: usize) -> anyhow::Result<Vec<usize>> {
 
     let tickets = tickets::get_all_tickets()?;
 
-    let mut periods: Vec<usize> = tickets
+    let mut periods_7digit: Vec<usize> = tickets
         .iter()
         .filter_map(|ticket| {
             if ticket.period.starts_with(&year.to_string()) && ticket.period.len() == 7 {
-                ticket.period[2..].parse::<usize>().ok()
+                ticket.period.parse::<usize>().ok()
             } else {
                 None
             }
         })
         .collect();
 
-    periods.sort_unstable();
-    periods.dedup();
+    periods_7digit.sort_unstable();
+    periods_7digit.dedup();
 
     log::debug!(
         "Found {} existing periods for year {year}: {:?}",
-        periods.len(),
-        periods
+        periods_7digit.len(),
+        periods_7digit
     );
-    Ok(periods)
+    Ok(periods_7digit)
 }
 
 /// Update tickets for a year starting from period 1
@@ -168,8 +183,8 @@ async fn update_year_from_start(year: usize) -> anyhow::Result<()> {
 }
 
 /// Update tickets for a year starting from a specific period number
-async fn update_tickets_after_period(start_period: usize) -> anyhow::Result<()> {
-    let mut period_num = start_period;
+async fn update_tickets_after_period(start_period_5digit: usize) -> anyhow::Result<()> {
+    let mut period_num = start_period_5digit;
     let mut consecutive_failures = 0;
     const MAX_CONSECUTIVE_FAILURES: usize = 3;
 
@@ -199,25 +214,25 @@ async fn update_tickets_after_period(start_period: usize) -> anyhow::Result<()> 
 }
 
 /// Fill missing periods in the existing data for a specific year
-async fn update_missing_periods(existing_periods: &[usize]) -> anyhow::Result<()> {
-    if existing_periods.is_empty() {
+async fn update_missing_periods(existing_periods_7digit: &[usize]) -> anyhow::Result<()> {
+    if existing_periods_7digit.is_empty() {
         return Ok(());
     }
 
-    let min_period = *existing_periods
+    let min_period = *existing_periods_7digit
         .iter()
         .min()
         .ok_or_else(|| anyhow::anyhow!("existing_periods should not be empty at this point"))?;
-    let max_period = *existing_periods
+    let max_period = *existing_periods_7digit
         .iter()
         .max()
         .ok_or_else(|| anyhow::anyhow!("existing_periods should not be empty at this point"))?;
 
-    log::info!("Filling gaps between periods {min_period} and {max_period}");
+    log::debug!("Filling gaps between periods {min_period} and {max_period}");
 
     for period_num in min_period..=max_period {
-        if !existing_periods.contains(&period_num) {
-            let period = period_num.to_string();
+        if !existing_periods_7digit.contains(&period_num) {
+            let period = (period_num % 100000).to_string();
             log::info!("Attempting to fill missing period: {period}");
 
             match update_tickets_by_period(&period).await {
@@ -225,7 +240,7 @@ async fn update_missing_periods(existing_periods: &[usize]) -> anyhow::Result<()
                     if inserted {
                         log::info!("Successfully filled missing period {period}");
                     } else {
-                        log::debug!("Period {period} already exists (race condition?)");
+                        log::warn!("Period {period} already exists (race condition?)");
                     }
                 }
                 Err(e) => {

@@ -27,9 +27,9 @@ fn main() -> eframe::Result {
 #[cfg(all(not(target_arch = "wasm32"), feature = "terminal"))]
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
-    use dball::terminal::Counter;
+    use dball::app::terminal::DballApp;
     use iocraft::prelude::*;
-    element!(Counter).render_loop().await?;
+    element!(DballApp).render_loop().await?;
     Ok(())
 }
 

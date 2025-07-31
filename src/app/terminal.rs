@@ -1,29 +1,32 @@
+mod components;
+mod layout;
+
+use iocraft::prelude::*;
+use layout::MainLayout;
 use std::time::Duration;
 
-use chrono::Local;
-use iocraft::prelude::*;
-
 #[component]
-pub fn Counter(mut hooks: Hooks<'_, '_>) -> impl Into<AnyElement<'static>> {
-    let (width, height) = hooks.use_terminal_size();
+pub fn DballApp(mut hooks: Hooks<'_, '_>) -> impl Into<AnyElement<'static>> {
     let mut system = hooks.use_context_mut::<SystemContext>();
-    let mut time = hooks.use_state(|| Local::now());
     let mut should_exit = hooks.use_state(|| false);
 
+    #[expect(clippy::infinite_loop)]
+    // This future runs periodic tasks; it will exit when should_exit is set to true.
     hooks.use_future(async move {
         loop {
             tokio::time::sleep(Duration::from_secs(1)).await;
-            time.set(Local::now());
+            // 这里可以添加定时数据更新逻辑
         }
     });
 
     hooks.use_terminal_events({
         move |event| match event {
-            TerminalEvent::Key(KeyEvent { code, kind, .. }) if kind != KeyEventKind::Release => {
-                match code {
-                    KeyCode::Char('q') => should_exit.set(true),
-                    _ => {}
-                }
+            TerminalEvent::Key(KeyEvent {
+                code: KeyCode::Char('q' | 'Q') | KeyCode::Esc,
+                kind,
+                ..
+            }) if kind != KeyEventKind::Release => {
+                should_exit.set(true);
             }
             _ => {}
         }
@@ -34,28 +37,6 @@ pub fn Counter(mut hooks: Hooks<'_, '_>) -> impl Into<AnyElement<'static>> {
     }
 
     element! {
-        View(
-            width,
-            height,
-            background_color: Color::DarkGrey,
-            border_style: BorderStyle::Double,
-            border_color: Color::Blue,
-            flex_direction: FlexDirection::Column,
-            align_items: AlignItems::Center,
-            justify_content: JustifyContent::Center,
-        ) {
-            View(
-                border_style: BorderStyle::Round,
-                border_color: Color::Blue,
-                margin_bottom: 2,
-                padding_top: 2,
-                padding_bottom: 2,
-                padding_left: 8,
-                padding_right: 8,
-            ) {
-                Text(content: format!("Current Time: {}", time.get().format("%r")))
-            }
-            Text(content: "Press \"q\" to quit.")
-        }
+        MainLayout()
     }
 }

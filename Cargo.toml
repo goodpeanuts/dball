@@ -17,7 +17,7 @@ members = [
 resolver = "2"
 
 [features]
-default = []
+default = ["terminal"]
 terminal = ["iocraft"]
 
 [dependencies]

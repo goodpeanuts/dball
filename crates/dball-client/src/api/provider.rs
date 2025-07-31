@@ -44,7 +44,6 @@ impl ApiProvider {
     }
 
     /// Get namespace for this provider (`provider.protocol.api_name`)
-    #[expect(unused)]
     pub fn config_namespace(&self, protocol: crate::api::Protocol, api_name: &str) -> String {
         format!(
             "{}.{}.{}",
@@ -56,7 +55,6 @@ impl ApiProvider {
 
     /// Get the environment variable prefix for authentication
     /// (e.g., `API_MXNZP_APP_ID`)
-    #[expect(unused)]
     pub fn auth_env_prefix(&self) -> String {
         format!("API_{}", self.id().to_uppercase())
     }

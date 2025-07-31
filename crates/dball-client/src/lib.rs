@@ -5,7 +5,9 @@ pub(crate) static ENV_GUARD: LazyLock<Result<PathBuf, anyhow::Error>> = LazyLock
 });
 
 pub mod api;
+pub mod daemon;
 pub mod db;
+pub mod ipc;
 pub mod models;
 pub mod service;
 

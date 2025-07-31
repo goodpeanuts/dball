@@ -1,9 +1,10 @@
 use ansi_term::Colour::{Blue, Red};
+use serde::{Deserialize, Serialize};
 use std::fmt::Display;
 
 const COST_PER_TICKET: usize = 2;
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct DBall {
     pub rball: [u8; 6],
     pub bball: u8,

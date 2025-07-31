@@ -28,7 +28,10 @@ fn main() -> eframe::Result {
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     use dball::app::terminal::DballApp;
+    use dball_client::ipc::client::IpcClient;
     use iocraft::prelude::*;
+    IpcClient::new().connect().await?;
+
     element!(DballApp).render_loop().await?;
     Ok(())
 }

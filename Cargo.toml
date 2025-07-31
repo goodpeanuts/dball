@@ -17,12 +17,13 @@ members = [
 resolver = "2"
 
 [features]
-default = ["terminal"]
+# default = ["terminal"]
 terminal = ["iocraft"]
 
 [dependencies]
 # workspace member:
 dball-combora ={ path = "crates/dball-combora" }
+dball-client = { path = "crates/dball-client" }
 
 egui = "0.32"
 eframe = { version = "0.32", default-features = false, features = [

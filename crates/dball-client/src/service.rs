@@ -3,8 +3,8 @@ mod ticket;
 
 pub use spot::{insert_new_spots_next_period, update_all_unprize_spots};
 pub use ticket::{
-    check_ticket_in_log_db, crawl_all_tickets, update_latest_ticket, update_tickets_by_period,
-    update_tickets_with_year,
+    check_ticket_in_log_db, crawl_all_tickets, get_next_period, update_latest_ticket,
+    update_tickets_by_period, update_tickets_with_year,
 };
 
 #[cfg(test)]

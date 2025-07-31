@@ -6,6 +6,7 @@ mod provider;
 mod rest;
 mod websocket;
 
+pub use config::ApiConfig;
 pub use provider::mxnzp::MXNZP_PROVIDER;
 pub use provider::{ProviderRequest, ProviderResponse};
 use serde::{Deserialize, Serialize};

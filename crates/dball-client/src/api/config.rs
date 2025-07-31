@@ -372,7 +372,6 @@ impl ApiConfig {
 }
 
 #[derive(Debug, Clone)]
-#[expect(unused)]
 pub enum ApiConfigEntry {
     Rest(super::rest::RestConfig),
     WebSocket(super::websocket::WebSocketConfig),
@@ -402,7 +401,6 @@ impl ApiConfigEntry {
         }
     }
 
-    #[expect(unused)]
     pub fn meta(&self) -> &HashMap<String, Value> {
         match self {
             Self::Rest(config) => &config.meta,

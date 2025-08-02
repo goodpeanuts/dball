@@ -17,13 +17,12 @@ members = [
 resolver = "2"
 
 [features]
-default = ["terminal"]
-terminal = ["iocraft", "async-lazy"]
+default = []
+terminal = ["iocraft", "async-lazy", "dball-client"]
 
 [dependencies]
 # workspace member:
 dball-combora ={ path = "crates/dball-combora" }
-dball-client = { path = "crates/dball-client" }
 
 egui = "0.32"
 eframe = { version = "0.32", default-features = false, features = [
@@ -57,7 +56,7 @@ harness = false
 [target.'cfg(not(target_arch = "wasm32"))'.dependencies]
 # workspace member:
 dball-combora ={ path = "crates/dball-combora" }
-dball-client ={ path = "crates/dball-client" }
+dball-client = { path = "crates/dball-client", optional = true }
 
 env_logger = "0.11.8"
 iocraft = {version = "0.7" , optional = true}

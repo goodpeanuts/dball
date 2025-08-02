@@ -35,7 +35,7 @@ impl DBall {
 
     pub fn avg_extreme(&self) -> Option<DBallChecker> {
         let avg = self.rball.iter().copied().sum::<u8>() / 5;
-        (avg < 10 || avg > 21).then_some(DBallChecker::AvgExtreme)
+        (!(10..=21).contains(&avg)).then_some(DBallChecker::AvgExtreme)
     }
 
     pub fn is_range_extreme(&self) -> Option<DBallChecker> {
@@ -44,7 +44,7 @@ impl DBall {
         let min = *self.rball.iter().min().unwrap_or(&0);
         let max = *self.rball.iter().max().unwrap_or(&33);
         let gap = max - min;
-        (gap < MIN_GAP || gap > MAX_GAP).then_some(DBallChecker::RangeExtreme)
+        (!((MIN_GAP)..=(MAX_GAP)).contains(&gap)).then_some(DBallChecker::RangeExtreme)
     }
 
     pub fn evaluate(&self) -> Vec<DBallChecker> {

@@ -75,7 +75,7 @@ mod tests {
 
     fn create_test_ticket(rball: [u8; 6], bball: u8) -> DBall {
         let mut rball = rball;
-        DBall::new_one(&mut rball[..], bball).unwrap()
+        DBall::new_one(&mut rball[..], bball).expect("Valid test ticket")
     }
 
     #[test]
@@ -174,7 +174,7 @@ mod tests {
         let ticket = DBall::new_one(&mut rball[..], 7);
         assert!(ticket.is_ok());
 
-        let ticket = ticket.unwrap();
+        let ticket = ticket.expect("Valid ticket");
         assert_eq!(ticket.rball.len(), 6);
         assert_eq!(ticket.bball, 7);
     }
@@ -221,8 +221,8 @@ mod tests {
 
         // Compare red balls as sets since they are sorted in the constructor
         use std::collections::HashSet;
-        let red_set1: HashSet<u8> = ticket1.rball.iter().cloned().collect();
-        let red_set2: HashSet<u8> = ticket2.rball.iter().cloned().collect();
+        let red_set1: HashSet<u8> = ticket1.rball.iter().copied().collect();
+        let red_set2: HashSet<u8> = ticket2.rball.iter().copied().collect();
 
         assert_eq!(red_set1, red_set2);
         assert_eq!(ticket1.bball, ticket2.bball);
@@ -233,9 +233,9 @@ mod tests {
         let result = BlueMorn::generate_with_red_range(1, 10, Some(5));
         assert!(result.is_ok());
 
-        let ticket = result.unwrap();
+        let ticket = result.expect("Valid limited ticket");
         for &red in &ticket.rball {
-            assert!(red >= 1 && red <= 10);
+            assert!((1..=10).contains(&red));
         }
         assert_eq!(ticket.bball, 5);
     }
@@ -275,7 +275,7 @@ mod tests {
             create_test_ticket([10, 11, 12, 13, 14, 15], 7), // 5
         ];
 
-        #[allow(deprecated)]
+        #[expect(deprecated)]
         let total = DBall::calculate_total_prize(&tickets, &winning_ticket);
         assert_eq!(total, 4_500_000 + 3_000 + 5);
     }

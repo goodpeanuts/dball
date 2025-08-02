@@ -1,27 +1,35 @@
-#[expect(clippy::wildcard_imports)]
-use super::components::*;
 use iocraft::prelude::*;
 
-/// 主布局组件
+mod logs;
+mod middle;
+mod nextgen;
+mod open_status;
+mod spot_histroy;
+
+pub(crate) use logs::init_logger;
+
+/// Main layout component
 #[component]
 pub fn MainLayout(mut hooks: Hooks<'_, '_>) -> impl Into<AnyElement<'static>> {
+    const LEFT_WIDTH: u16 = 52;
+
     let (width, height) = hooks.use_terminal_size();
 
-    // 计算各区域尺寸
-    let left_width = width / 3;
-    let center_width = width / 3;
-    let right_width = width - left_width - center_width;
+    // Ensure enough space for display, reserve 1 line each for top and bottom
+    let usable_height = height.saturating_sub(2);
 
-    // 左列比例：上35%，下65%
-    let left_top_height = (height * 35) / 100;
-    let left_bottom_height = height - left_top_height;
+    let left_width = LEFT_WIDTH;
+    let remaining_width = width.saturating_sub(left_width);
+    let center_width = remaining_width / 2;
+    let right_width = remaining_width - center_width;
 
-    // 中列比例：上75%，下25%
-    let center_top_height = (height * 75) / 100;
-    let center_bottom_height = height - center_top_height;
+    // Left column ratio: 45% top, 55% bottom (optimized ratio to avoid being too tall)
+    let left_top_height = (usable_height * 45) / 100;
+    let left_bottom_height = usable_height - left_top_height;
 
-    // 创建分割线 - 需要考虑padding，所以长度要更短
-    let horizontal_divider = "─".repeat((left_width - 4) as usize);
+    // Center column ratio: 70% top, 30% bottom (adjusted ratio to avoid being too tall)
+    let center_top_height = (usable_height * 70) / 100;
+    let center_bottom_height = usable_height - center_top_height;
 
     element! {
         View(
@@ -29,65 +37,81 @@ pub fn MainLayout(mut hooks: Hooks<'_, '_>) -> impl Into<AnyElement<'static>> {
             height,
             flex_direction: FlexDirection::Row,
             background_color: Color::Black,
+            padding: 1,
         ) {
-            // 左列：状态 + 分割线 + 评估结果
+            // Left column: NextGen + SpotHistory (dynamic width)
             View(
-                width: left_width,
-                height,
+                width: left_width.saturating_sub(1),
+                height: usable_height,
                 flex_direction: FlexDirection::Column,
-                padding_left: 1,
-                padding_right: 1,
+                margin_right: 1,
             ) {
-                // 上半部分 (35%)
-                View(height: left_top_height - 1, padding: 1) {
-                    StatusPanel()
+                // NextGen area
+                View(
+                    height: left_top_height.saturating_sub(1),
+                    border_style: BorderStyle::Round,
+                    border_color: Color::Blue,
+                    background_color: Color::Black,
+                    margin_bottom: 1,
+                    padding: 1,
+                ) {
+                    nextgen::NextGenLayout()
                 }
-                // 分割线
-                View(height: 1, padding_left: 1) {
-                    Text(content: horizontal_divider.clone(), color: Color::White)
-                }
-                // 下半部分 (65%)
-                View(height: left_bottom_height, padding: 1) {
-                    EvaluationPanel()
+
+                // SpotHistory area
+                View(
+                    height: left_bottom_height,
+                    border_style: BorderStyle::Round,
+                    border_color: Color::Green,
+                    background_color: Color::Black,
+                    padding: 1,
+                ) {
+                    spot_histroy::SpotHistoryLayout()
                 }
             }
 
-            // 垂直分割线
+            // Center column: OpenStatus + Middle
             View(
-                width: 1,
-                height,
-                background_color: Color::White,
-            )
-
-            // 中列：时间期号 + 分割线 + 生成部分
-            View(
-                width: center_width - 1,
-                height,
+                width: center_width.saturating_sub(1),
+                height: usable_height,
                 flex_direction: FlexDirection::Column,
-                padding_left: 1,
-                padding_right: 1,
+                margin_right: 1,
             ) {
-                // 上半部分 (75%)
-                View(height: center_top_height - 1, padding: 1) {
-                    TimeAndPeriodPanel()
+                // OpenStatus area
+                View(
+                    height: center_top_height.saturating_sub(1),
+                    border_style: BorderStyle::Round,
+                    border_color: Color::Yellow,
+                    background_color: Color::Black,
+                    margin_bottom: 1,
+                    padding: 1,
+                ) {
+                    open_status::OpenStatusLayout()
                 }
-                // 分割线
-                View(height: 1, padding_left: 1) {
-                    Text(content: horizontal_divider.clone(), color: Color::White)
-                }
-                // 下半部分 (25%)
-                View(height: center_bottom_height, padding: 1) {
-                    GenerationPanel()
+
+                // Middle area
+                View(
+                    height: center_bottom_height,
+                    border_style: BorderStyle::Round,
+                    border_color: Color::Magenta,
+                    background_color: Color::Black,
+                    padding: 1,
+                ) {
+                    middle::MiddleLayout()
                 }
             }
 
-            // 右列：日志输出
+            // Right column: log output (remove duplicate border)
             View(
                 width: right_width,
-                height,
+                height: usable_height,
+                border_style: BorderStyle::Round,
+                border_color: Color::White,
+                background_color: Color::Black,
+                flex_direction: FlexDirection::Column,
                 padding: 1,
             ) {
-                LogPanel()
+                logs::LogsLayout()
             }
         }
     }

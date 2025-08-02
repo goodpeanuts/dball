@@ -1,5 +1,5 @@
 use flate2::{Compression, read::GzDecoder, write::GzEncoder};
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
 use std::io::{Cursor, Read as _, Write as _};
 
 use super::envelope::IpcEnvelope;
@@ -9,7 +9,7 @@ pub struct IpcCodec;
 impl IpcCodec {
     const COMPRESSION_THRESHOLD: usize = 1024;
 
-    pub fn encode<T: Serialize>(envelope: &IpcEnvelope<T>) -> Result<Vec<u8>, CodecError> {
+    pub fn encode(envelope: &IpcEnvelope) -> Result<Vec<u8>, CodecError> {
         let json_data = serde_json::to_vec(envelope)
             .map_err(|e| CodecError::SerializationError(e.to_string()))?;
 
@@ -45,9 +45,7 @@ impl IpcCodec {
     /// decode byte stream to message
     ///
     /// return decoded message and consumed bytes
-    pub fn decode<T: for<'de> Deserialize<'de>>(
-        buffer: &[u8],
-    ) -> Result<Option<(IpcEnvelope<T>, usize)>, CodecError> {
+    pub fn decode(buffer: &[u8]) -> Result<Option<(IpcEnvelope, usize)>, CodecError> {
         if buffer.len() < 4 {
             // need more data to read length
             return Ok(None);
@@ -144,7 +142,7 @@ impl FrameBuffer {
     /// If no complete message is found, None is returned.
     pub fn try_decode<T: for<'de> Deserialize<'de>>(
         &mut self,
-    ) -> Result<Option<IpcEnvelope<T>>, CodecError> {
+    ) -> Result<Option<IpcEnvelope>, CodecError> {
         match IpcCodec::decode(&self.buffer)? {
             Some((envelope, consumed)) => {
                 // update buffer to remove consumed data
@@ -188,19 +186,22 @@ mod tests {
             supported_features: vec!["basic".to_string()],
         };
 
-        let envelope = IpcEnvelope::new(IpcKind::Hello, hello_msg.clone());
+        let envelope = IpcEnvelope::new(IpcKind::Hello, serde_json::to_value(&hello_msg).unwrap());
 
         // 编码
         let encoded = IpcCodec::encode(&envelope).expect("Failed to encode");
 
         // 解码
-        let (decoded, consumed) = IpcCodec::decode::<HelloMessage>(&encoded)
+        let (decoded, consumed) = IpcCodec::decode(&encoded)
             .expect("Failed to decode")
             .expect("No message decoded");
 
+        let received_hello_message = serde_json::from_value::<HelloMessage>(decoded.msg)
+            .expect("Failed to deserialize HelloMessage");
+
         assert_eq!(consumed, encoded.len());
         assert_eq!(envelope.uuid, decoded.uuid);
-        assert_eq!(hello_msg.client_info, decoded.msg.client_info);
+        assert_eq!(hello_msg.client_info, received_hello_message.client_info);
     }
 
     #[test]
@@ -215,19 +216,25 @@ mod tests {
             supported_features: large_features.clone(),
         };
 
-        let envelope = IpcEnvelope::new(IpcKind::Hello, hello_msg.clone());
+        let envelope = IpcEnvelope::new(IpcKind::Hello, serde_json::to_value(&hello_msg).unwrap());
 
         // 编码
         let encoded = IpcCodec::encode(&envelope).expect("Failed to encode");
 
         // 解码
-        let (decoded, consumed) = IpcCodec::decode::<HelloMessage>(&encoded)
+        let (decoded, consumed) = IpcCodec::decode(&encoded)
             .expect("Failed to decode")
             .expect("No message decoded");
 
+        let received_hello_message = serde_json::from_value::<HelloMessage>(decoded.msg)
+            .expect("Failed to deserialize HelloMessage");
+
         assert_eq!(consumed, encoded.len());
         assert_eq!(envelope.uuid, decoded.uuid);
-        assert_eq!(large_features.len(), decoded.msg.supported_features.len());
+        assert_eq!(
+            large_features.len(),
+            received_hello_message.supported_features.len()
+        );
     }
 
     #[test]
@@ -239,7 +246,7 @@ mod tests {
             supported_features: vec!["basic".to_string()],
         };
 
-        let envelope = IpcEnvelope::new(IpcKind::Hello, hello_msg.clone());
+        let envelope = IpcEnvelope::new(IpcKind::Hello, serde_json::to_value(&hello_msg).unwrap());
         let encoded = IpcCodec::encode(&envelope).expect("Failed to encode");
 
         let mut buffer = FrameBuffer::new();
@@ -274,17 +281,17 @@ mod tests {
             supported_features: vec!["basic".to_string()],
         };
 
-        let envelope = IpcEnvelope::new(IpcKind::Hello, hello_msg);
+        let envelope = IpcEnvelope::new(IpcKind::Hello, serde_json::to_value(&hello_msg).unwrap());
         let encoded = IpcCodec::encode(&envelope).expect("Failed to encode");
 
         // 测试部分数据解码
         let partial = &encoded[0..2]; // 只有部分长度字段
-        let result = IpcCodec::decode::<HelloMessage>(partial).expect("Decode failed");
+        let result = IpcCodec::decode(partial).expect("Decode failed");
         assert!(result.is_none());
 
         // 测试只有长度字段的情况
         let partial = &encoded[0..4]; // 只有长度字段
-        let result = IpcCodec::decode::<HelloMessage>(partial).expect("Decode failed");
+        let result = IpcCodec::decode(partial).expect("Decode failed");
         assert!(result.is_none());
     }
 }

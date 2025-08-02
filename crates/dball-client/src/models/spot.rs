@@ -22,6 +22,7 @@ pub struct Spot {
     pub blue: i32,
     pub magnification: i32,
     pub prize_status: Option<i32>,
+    pub deprecated: bool,
     pub created_time: NaiveDateTime,
     pub modified_time: NaiveDateTime,
 }
@@ -51,6 +52,7 @@ impl Spot {
             blue: dball.bball as i32,
             magnification: dball.magnification as i32,
             prize_status,
+            deprecated: false,
             created_time: now,
             modified_time: now,
         })
@@ -80,6 +82,7 @@ impl Spot {
             blue: dball.bball as i32,
             magnification: dball.magnification as i32,
             prize_status,
+            deprecated: false,
             created_time,
             modified_time,
         })
@@ -174,6 +177,7 @@ impl From<DBall> for Spot {
             blue: dball.bball as i32,
             magnification: dball.magnification as i32,
             prize_status: None,
+            deprecated: false,
             created_time: now,
             modified_time: now,
         }

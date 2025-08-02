@@ -154,7 +154,7 @@ impl BlueMorn {
 
                 if should_pick && !tickets.is_empty() {
                     let random_index = rng.gen_range(0..tickets.len());
-                    let selected = tickets[random_index].clone();
+                    let selected = tickets[random_index];
                     selected_tickets.push(selected);
                 }
             }

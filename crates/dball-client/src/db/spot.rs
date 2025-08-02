@@ -54,6 +54,36 @@ pub fn update_spot_prize_status_by_id(id: i32, prize_status: Option<i32>) -> any
         })
 }
 
+/// Mark spots as deprecated (deprecated = true)
+/// Only marks spots that are currently not deprecated
+pub fn mark_spots_deprecated(spot_ids: &[i32]) -> anyhow::Result<usize> {
+    if spot_ids.is_empty() {
+        return Ok(0);
+    }
+
+    let mut connection = get_db_connection()?;
+
+    // Update only spots that are currently not deprecated
+    let updated_count = diesel::update(
+        spot::table
+            .filter(spot::id.eq_any(spot_ids))
+            .filter(spot::deprecated.eq(false)),
+    )
+    .set((
+        spot::deprecated.eq(true),
+        spot::modified_time.eq(chrono::Utc::now().naive_utc()),
+    ))
+    .execute(&mut connection)
+    .map_err(|e| anyhow::anyhow!("Error marking spots as deprecated: {e}"))?;
+
+    log::debug!(
+        "Marked {} spots as deprecated out of {} requested",
+        updated_count,
+        spot_ids.len()
+    );
+    Ok(updated_count)
+}
+
 /// Get spots by period and convert them to `DBall`
 pub fn get_spots_by_period_as_dball(period: &str) -> anyhow::Result<Vec<DBall>> {
     let spots = get_spots_by_period(period)?;
@@ -102,6 +132,16 @@ pub fn get_latest_spots(limit: i64) -> anyhow::Result<Vec<Spot>> {
         .limit(limit)
         .load::<Spot>(&mut connection)
         .map_err(|e| anyhow::anyhow!("Error loading latest {limit} spots: {e}"))
+}
+
+pub fn get_latest_unprized_spots(limit: i64) -> anyhow::Result<Vec<Spot>> {
+    let mut connection = get_db_connection()?;
+    spot::table
+        .filter(spot::prize_status.is_null())
+        .order(spot::created_time.desc())
+        .limit(limit)
+        .load::<Spot>(&mut connection)
+        .map_err(|e| anyhow::anyhow!("Error loading latest {limit} unprized spots: {e}"))
 }
 
 pub fn find_spots_with_red_number(number: i32) -> anyhow::Result<Vec<Spot>> {
@@ -362,5 +402,58 @@ mod test {
                 Err(e)
             }
         }
+    }
+
+    #[test]
+    fn test_mark_spots_deprecated() -> anyhow::Result<()> {
+        // First insert some test spots
+        let dball1 = DBall::new(vec![1, 2, 3, 4, 5, 6], 1, 1)
+            .map_err(|e| anyhow::anyhow!("DBall creation failed: {e}"))?;
+        let dball2 = DBall::new(vec![7, 8, 9, 10, 11, 12], 2, 1)
+            .map_err(|e| anyhow::anyhow!("DBall creation failed: {e}"))?;
+
+        let period = "2025999";
+        insert_spot_from_dball(period, &dball1, None)?;
+        insert_spot_from_dball(period, &dball2, None)?;
+
+        // Get the inserted spots
+        let spots = get_spots_by_period(period)?;
+        assert!(spots.len() >= 2);
+
+        // Extract some IDs (take first 2)
+        let spot_ids: Vec<i32> = spots.iter().take(2).filter_map(|s| s.id).collect();
+        assert!(!spot_ids.is_empty());
+
+        // Mark them as deprecated
+        let updated_count = mark_spots_deprecated(&spot_ids)?;
+        log::info!("Marked {} spots as deprecated", updated_count);
+
+        // Verify they were marked
+        let updated_spots = get_spots_by_period(period)?;
+        let deprecated_count = updated_spots
+            .iter()
+            .filter(|s| s.deprecated == true)
+            .count();
+
+        assert!(deprecated_count > 0);
+        log::info!("Found {} deprecated spots after marking", deprecated_count);
+
+        Ok(())
+    }
+
+    #[test]
+    fn test_get_latest_unprized_spots() -> anyhow::Result<()> {
+        let spots = get_latest_unprized_spots(3)?;
+        log::info!("Found {} latest unprized spots", spots.len());
+
+        for spot in &spots {
+            assert!(
+                spot.prize_status.is_none(),
+                "Spot should have no prize status"
+            );
+            log::info!("Unprized spot: {} - {:?}", spot.period, spot.id);
+        }
+
+        Ok(())
     }
 }

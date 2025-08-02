@@ -1,8 +1,32 @@
+use dball_combora::dball::{DBall, DBallBatch};
 use iocraft::prelude::*;
 
-/// 状态面板组件
+use crate::terminal::ipc::send_rpc_request;
+
+pub(crate) mod dball;
+pub(crate) mod spot;
+
+/// Status panel component
 #[component]
-pub fn StatusPanel(_hooks: Hooks<'_, '_>) -> impl Into<AnyElement<'static>> {
+pub fn StatusPanel(mut hooks: Hooks<'_, '_>) -> impl Into<AnyElement<'static>> {
+    let mut latest_unprize_spots = hooks.use_state(|| DBallBatch(vec![]));
+
+    hooks.use_future(async move {
+        match send_rpc_request::<Result<Vec<DBall>, String>>(
+            dball_client::ipc::RpcService::GetUnprizeSpots,
+        )
+        .await
+        {
+            Ok(Ok(spots)) => {
+                log::info!("Latest unprized spots fetched successfully {spots:?}");
+                *latest_unprize_spots.write() = DBallBatch(spots);
+            }
+            Err(e) | Ok(Err(e)) => {
+                log::error!("Failed to fetch latest unprized spots: {e}");
+            }
+        }
+    });
+
     element! {
         View(
             flex_direction: FlexDirection::Column,
@@ -10,14 +34,24 @@ pub fn StatusPanel(_hooks: Hooks<'_, '_>) -> impl Into<AnyElement<'static>> {
             Text(content: "Status", color: Color::Yellow, weight: Weight::Bold)
             Text(content: "Regenerating", color: Color::Cyan)
             Text(content: "Generated", color: Color::Green)
+            Text(content: "Unprize Spots", color: Color::White)
+            Text(content: format!("{}", *latest_unprize_spots.read()), color: Color::White)
         }
     }
 }
 
-/// 时间和期号面板组件
+/// Time and period panel component
 #[component]
 pub fn TimeAndPeriodPanel(mut hooks: Hooks<'_, '_>) -> impl Into<AnyElement<'static>> {
-    let time = hooks.use_state(chrono::Local::now);
+    let mut time = hooks.use_state(chrono::Local::now);
+
+    hooks.use_future(async move {
+        #[expect(clippy::infinite_loop)]
+        loop {
+            tokio::time::sleep(std::time::Duration::from_secs(1)).await;
+            *time.write() = chrono::Local::now();
+        }
+    });
 
     element! {
         View(
@@ -34,7 +68,7 @@ pub fn TimeAndPeriodPanel(mut hooks: Hooks<'_, '_>) -> impl Into<AnyElement<'sta
     }
 }
 
-/// 生成部分面板组件
+/// Generation part panel component
 #[component]
 pub fn GenerationPanel(_hooks: Hooks<'_, '_>) -> impl Into<AnyElement<'static>> {
     element! {
@@ -59,7 +93,7 @@ pub fn GenerationPanel(_hooks: Hooks<'_, '_>) -> impl Into<AnyElement<'static>> 
     }
 }
 
-/// 评估结果面板组件
+/// Evaluation result panel component
 #[component]
 pub fn EvaluationPanel(_hooks: Hooks<'_, '_>) -> impl Into<AnyElement<'static>> {
     element! {
@@ -78,49 +112,6 @@ pub fn EvaluationPanel(_hooks: Hooks<'_, '_>) -> impl Into<AnyElement<'static>> 
             Text(content: "Prize: ¥0", color: Color::Red)
             Text(content: "Cost: ¥2", color: Color::White)
             Text(content: "Net Income: -¥2", color: Color::Red)
-        }
-    }
-}
-
-/// 日志输出面板组件
-#[component]
-pub fn LogPanel(_hooks: Hooks<'_, '_>) -> impl Into<AnyElement<'static>> {
-    let logs = [
-        "[2025-07-30 16:30:45] INFO: Starting to fetch latest lottery results",
-        "[2025-07-30 16:30:46] INFO: Successfully fetched period 2025084 data",
-        "[2025-07-30 16:30:46] INFO: Data validation passed",
-        "[2025-07-30 16:30:47] INFO: Starting to generate betting numbers",
-        "[2025-07-30 16:30:47] INFO: Using BlueMorn strategy for generation",
-        "[2025-07-30 16:30:48] INFO: Number generation completed",
-        "[2025-07-30 16:30:48] INFO: Evaluating last period betting results",
-        "[2025-07-30 16:30:49] WARN: Last period no win, loss 2 yuan",
-        "[2025-07-30 16:30:49] INFO: Preparing to submit next period bet",
-        "[2025-07-30 16:30:50] INFO: System running normally",
-    ];
-
-    element! {
-        View(
-            border_style: BorderStyle::Round,
-            border_color: Color::White,
-            padding: 1,
-            flex_direction: FlexDirection::Column,
-        ) {
-            Text(content: "Log Output", color: Color::Yellow, weight: Weight::Bold)
-            View(
-                flex_direction: FlexDirection::Column,
-                margin_top: 1,
-            ) {
-                Text(content: logs[0], color: Color::Green)
-                Text(content: logs[1], color: Color::Green)
-                Text(content: logs[2], color: Color::Green)
-                Text(content: logs[3], color: Color::Green)
-                Text(content: logs[4], color: Color::Green)
-                Text(content: logs[5], color: Color::Green)
-                Text(content: logs[6], color: Color::Green)
-                Text(content: logs[7], color: Color::Yellow)
-                Text(content: logs[8], color: Color::Green)
-                Text(content: logs[9], color: Color::Green)
-            }
         }
     }
 }

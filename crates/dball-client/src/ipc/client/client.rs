@@ -8,7 +8,7 @@ use tokio::sync::{RwLock, mpsc, oneshot};
 use crate::ipc::{
     codec::{FrameBuffer, IpcCodec},
     envelope::{IpcEnvelope, IpcKind},
-    protocol::{AppState, EventType, HelloMessage, ResponseMessage, SubscribeMessage},
+    protocol::{AppState, EventType, HelloMessage, SubscribeMessage},
 };
 
 #[derive(Debug, Clone)]
@@ -32,9 +32,9 @@ pub struct IpcClient {
     /// Current application state
     app_state: Arc<RwLock<Option<AppState>>>,
     /// Message sender channel
-    message_sender: Option<mpsc::UnboundedSender<IpcEnvelope<serde_json::Value>>>,
+    message_sender: Option<mpsc::UnboundedSender<IpcEnvelope>>,
     /// Pending requests waiting for responses
-    pending_requests: Arc<RwLock<HashMap<String, oneshot::Sender<ResponseMessage>>>>,
+    pending_requests: Arc<RwLock<HashMap<String, oneshot::Sender<serde_json::Value>>>>,
 }
 
 impl IpcClient {
@@ -61,6 +61,12 @@ impl IpcClient {
             message_sender: None,
             pending_requests: Arc::new(RwLock::new(HashMap::new())),
         }
+    }
+
+    pub async fn new_connected() -> Result<Self> {
+        let mut client = Self::new();
+        client.connect().await?;
+        Ok(client)
     }
 
     /// Connect to the daemon
@@ -126,9 +132,10 @@ impl IpcClient {
     pub async fn send_rpc_request(
         &self,
         service: crate::ipc::protocol::RpcService,
-    ) -> Result<ResponseMessage> {
+    ) -> Result<serde_json::Value> {
         let envelope = IpcEnvelope::new(IpcKind::Request(service), serde_json::Value::Null);
         let request_uuid = envelope.uuid.clone();
+        log::debug!("Sending RPC request id : {request_uuid}");
 
         let (response_sender, response_receiver) = oneshot::channel();
 
@@ -210,19 +217,18 @@ impl IpcClient {
         mut stream: UnixStream,
         state: Arc<RwLock<ClientState>>,
         app_state: Arc<RwLock<Option<AppState>>>,
-        pending_requests: Arc<RwLock<HashMap<String, oneshot::Sender<ResponseMessage>>>>,
-        mut message_receiver: mpsc::UnboundedReceiver<IpcEnvelope<serde_json::Value>>,
+        pending_requests: Arc<RwLock<HashMap<String, oneshot::Sender<serde_json::Value>>>>,
+        mut message_receiver: mpsc::UnboundedReceiver<IpcEnvelope>,
     ) -> Result<()> {
         let mut buffer = FrameBuffer::new();
         let mut read_buf = vec![0u8; 4096];
 
         loop {
             tokio::select! {
-                // 读取服务器数据
                 result = stream.read(&mut read_buf) => {
                     match result {
                         Ok(0) => {
-                            log::info!("Server disconnected");
+                            log::error!("Server disconnected");
                             *state.write().await = ClientState::Disconnected;
                             break;
                         }
@@ -255,39 +261,25 @@ impl IpcClient {
     }
 
     async fn process_server_message(
-        envelope: IpcEnvelope<serde_json::Value>,
+        envelope: IpcEnvelope,
         app_state: &Arc<RwLock<Option<AppState>>>,
-        pending_requests: &Arc<RwLock<HashMap<String, oneshot::Sender<ResponseMessage>>>>,
+        pending_requests: &Arc<RwLock<HashMap<String, oneshot::Sender<serde_json::Value>>>>,
     ) -> Result<()> {
         match envelope.kind {
             IpcKind::Hello => {
                 log::info!("Received Hello response from server");
             }
-            IpcKind::Response(_) => {
-                // parse ResponseMessage
-                if let Ok(response) = serde_json::from_value::<ResponseMessage>(envelope.msg) {
-                    // find pending request
-                    let mut pending = pending_requests.write().await;
-                    if let Some(sender) = pending.remove(&response.request_uuid) {
-                        // 发送响应到等待的客户端
-                        if sender.send(response.clone()).is_err() {
-                            log::warn!("Failed to send response to waiting client");
-                        }
+            IpcKind::Response => {
+                let mut pending = pending_requests.write().await;
+                if let Some(sender) = pending.remove(&envelope.uuid) {
+                    // parse ResponseMessage
+                    if sender.send(envelope.msg).is_err() {
+                        log::error!("Failed to send response for UUID: {}", envelope.uuid);
                     }
-
-                    // update app state
-                    if response.success {
-                        if let Some(data) = response.data {
-                            // try to parse AppState
-                            if let Ok(state) = serde_json::from_value::<AppState>(data) {
-                                *app_state.write().await = Some(state);
-                                log::info!("Updated app state from subscription response");
-                            }
-                        }
-                    } else {
-                        log::error!("RPC call failed: {:?}", response.error);
-                    }
-                }
+                } else {
+                    log::warn!("No pending request found for UUID: {}", envelope.uuid);
+                    return Ok(());
+                };
             }
             IpcKind::Event => {
                 if let Ok(state) = serde_json::from_value::<AppState>(envelope.msg) {
@@ -306,10 +298,7 @@ impl IpcClient {
         Ok(())
     }
 
-    async fn send_message<T: serde::Serialize>(
-        stream: &mut UnixStream,
-        envelope: &IpcEnvelope<T>,
-    ) -> Result<()> {
+    async fn send_message(stream: &mut UnixStream, envelope: &IpcEnvelope) -> Result<()> {
         let encoded = IpcCodec::encode(envelope)?;
         stream.write_all(&encoded).await?;
         Ok(())

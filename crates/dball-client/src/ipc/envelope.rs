@@ -1,5 +1,6 @@
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
+use strum_macros::Display;
 use uuid::Uuid;
 
 use super::protocol::RpcService;
@@ -8,7 +9,7 @@ use super::protocol::RpcService;
 /// All IPC messages are encapsulated using this format,
 /// which includes protocol version, message ID, type, and specific content
 #[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct IpcEnvelope<T> {
+pub struct IpcEnvelope {
     /// Protocol version, currently 1
     pub proto: u16,
     /// Message unique identifier
@@ -16,13 +17,13 @@ pub struct IpcEnvelope<T> {
     /// Basic communication type
     pub kind: IpcKind,
     /// Specific message content
-    pub msg: T,
+    pub msg: serde_json::Value,
     /// Message timestamp
     pub timestamp: DateTime<Utc>,
 }
 
-impl<T> IpcEnvelope<T> {
-    pub fn new(kind: IpcKind, msg: T) -> Self {
+impl IpcEnvelope {
+    pub fn new(kind: IpcKind, msg: serde_json::Value) -> Self {
         Self {
             proto: 1,
             uuid: Uuid::new_v4().to_string(),
@@ -33,7 +34,7 @@ impl<T> IpcEnvelope<T> {
     }
 
     /// Create a new IPC message envelope with a specific UUID
-    pub fn new_with_uuid(kind: IpcKind, msg: T, uuid: String) -> Self {
+    pub fn new_with_uuid(kind: IpcKind, msg: serde_json::Value, uuid: String) -> Self {
         Self {
             proto: 1,
             uuid,
@@ -45,7 +46,7 @@ impl<T> IpcEnvelope<T> {
 }
 
 /// IPC basic communication types
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone, Display)]
 pub enum IpcKind {
     /// Hello message, used for protocol handshake
     Hello,
@@ -54,7 +55,7 @@ pub enum IpcKind {
     /// Client RPC request
     Request(RpcService),
     /// Server response (success/failure)
-    Response(bool),
+    Response,
     /// Event notification (status change)
     Event,
     /// Error message
@@ -75,7 +76,7 @@ mod tests {
             supported_features: vec!["basic".to_string()],
         };
 
-        let envelope = IpcEnvelope::new(IpcKind::Hello, hello_msg);
+        let envelope = IpcEnvelope::new(IpcKind::Hello, serde_json::to_value(hello_msg).unwrap());
 
         assert_eq!(envelope.proto, 1);
         assert!(!envelope.uuid.is_empty());
@@ -91,9 +92,9 @@ mod tests {
             supported_features: vec!["basic".to_string()],
         };
 
-        let envelope = IpcEnvelope::new(IpcKind::Hello, hello_msg);
+        let envelope = IpcEnvelope::new(IpcKind::Hello, serde_json::to_value(hello_msg).unwrap());
         let serialized = serde_json::to_string(&envelope).expect("Failed to serialize");
-        let deserialized: IpcEnvelope<HelloMessage> =
+        let deserialized: IpcEnvelope =
             serde_json::from_str(&serialized).expect("Failed to deserialize");
 
         assert_eq!(envelope.uuid, deserialized.uuid);

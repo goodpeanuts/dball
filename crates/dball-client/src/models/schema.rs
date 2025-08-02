@@ -13,6 +13,7 @@ diesel::table! {
         blue -> Integer,
         magnification -> Integer,
         prize_status -> Nullable<Integer>,
+        deprecated -> Bool,
         created_time -> Timestamp,
         modified_time -> Timestamp,
     }

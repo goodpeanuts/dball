@@ -1,8 +1,8 @@
 use super::DBall;
 
-const RED_BASE: u32 = 0; // 红球起始位索引
-const BLUE_BASE: u32 = 33; // 蓝球起始位索引
-const TOTAL_ONES: u32 = 7; // 每注 one-hot 中固定有 7 个 1
+const RED_BASE: u32 = 0; // Red ball starting bit index
+const BLUE_BASE: u32 = 33; // Blue ball starting bit index
+const TOTAL_ONES: u32 = 7; // Fixed 7 ones in each one-hot encoding
 
 /// one-hot bits display for dball
 /// lower 33 bits for rballs

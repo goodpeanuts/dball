@@ -9,7 +9,7 @@ use tokio::task::JoinHandle;
 use crate::ipc::{
     codec::{FrameBuffer, IpcCodec},
     envelope::{IpcEnvelope, IpcKind},
-    protocol::{AppState, ErrorMessage, HelloMessage, ResponseMessage, RpcService},
+    protocol::{AppState, ErrorMessage, HelloMessage, RpcService},
 };
 
 /// IPC Server
@@ -126,7 +126,7 @@ impl IpcServer {
                         Ok(n) => {
                             buffer.push(&read_buf[0..n]);
 
-                            // 尝试解码消息
+                            // try to decode messages
                             while let Some(envelope) = buffer.try_decode::<serde_json::Value>()? {
                                 if let Err(e) = Self::process_message(envelope, &mut stream, &state).await {
                                     log::error!("Failed to process message: {e}");
@@ -173,7 +173,7 @@ impl IpcServer {
 
     /// Process incoming messages from the client
     async fn process_message(
-        envelope: IpcEnvelope<serde_json::Value>,
+        envelope: IpcEnvelope,
         stream: &mut UnixStream,
         state: &Arc<RwLock<AppState>>,
     ) -> Result<()> {
@@ -189,10 +189,7 @@ impl IpcServer {
     }
 
     /// Process Hello message from the client
-    async fn handle_hello(
-        envelope: IpcEnvelope<serde_json::Value>,
-        stream: &mut UnixStream,
-    ) -> Result<()> {
+    async fn handle_hello(envelope: IpcEnvelope, stream: &mut UnixStream) -> Result<()> {
         log::info!("Received Hello message from client");
 
         // 创建Hello响应
@@ -207,124 +204,31 @@ impl IpcServer {
             ],
         };
 
-        let response_envelope =
-            IpcEnvelope::new_with_uuid(IpcKind::Hello, hello_response, envelope.uuid);
+        let response_envelope = IpcEnvelope::new_with_uuid(
+            IpcKind::Hello,
+            serde_json::to_value(hello_response)?,
+            envelope.uuid,
+        );
 
         Self::send_message(stream, &response_envelope).await
     }
 
     /// Process Subscribe message from the client
     async fn handle_subscribe(
-        envelope: IpcEnvelope<serde_json::Value>,
+        envelope: IpcEnvelope,
         stream: &mut UnixStream,
         state: &Arc<RwLock<AppState>>,
     ) -> Result<()> {
         log::info!("Received Subscribe message from client");
-
-        // 发送当前状态作为订阅确认
         let current_state = state.read().await.clone();
 
-        let response = ResponseMessage {
-            request_uuid: envelope.uuid.clone(),
-            success: true,
-            data: Some(serde_json::to_value(&current_state)?),
-            error: None,
-        };
+        let response = IpcEnvelope::new_with_uuid(
+            IpcKind::Response,
+            serde_json::to_value(&current_state)?,
+            envelope.uuid,
+        );
 
-        let response_envelope =
-            IpcEnvelope::new_with_uuid(IpcKind::Response(true), response, envelope.uuid);
-
-        Self::send_message(stream, &response_envelope).await
-    }
-
-    /// Process RPC request from the client
-    async fn handle_request(
-        envelope: IpcEnvelope<serde_json::Value>,
-        stream: &mut UnixStream,
-        state: &Arc<RwLock<AppState>>,
-    ) -> Result<()> {
-        log::info!("Received RPC request from client: {:?}", envelope.kind);
-
-        let response = match envelope.kind {
-            IpcKind::Request(service) => {
-                match service {
-                    RpcService::GetCurrentState => {
-                        let current_state = state.read().await.clone();
-                        ResponseMessage {
-                            request_uuid: envelope.uuid.clone(),
-                            success: true,
-                            data: Some(serde_json::to_value(current_state)?),
-                            error: None,
-                        }
-                    }
-                    RpcService::UpdateLatestTicket => {
-                        match crate::service::update_latest_ticket().await {
-                            Ok(period) => ResponseMessage {
-                                request_uuid: envelope.uuid.clone(),
-                                success: true,
-                                data: Some(serde_json::json!({"latest_period": period})),
-                                error: None,
-                            },
-                            Err(e) => ResponseMessage {
-                                request_uuid: envelope.uuid.clone(),
-                                success: false,
-                                data: None,
-                                error: Some(format!("Failed to update latest ticket: {e}")),
-                            },
-                        }
-                    }
-                    RpcService::GetLatestPeriod => match crate::service::get_next_period().await {
-                        Ok(next_period) => ResponseMessage {
-                            request_uuid: envelope.uuid.clone(),
-                            success: true,
-                            data: Some(serde_json::json!({"next_period": next_period})),
-                            error: None,
-                        },
-                        Err(e) => ResponseMessage {
-                            request_uuid: envelope.uuid.clone(),
-                            success: false,
-                            data: None,
-                            error: Some(format!("Failed to get latest period: {e}")),
-                        },
-                    },
-                    RpcService::UpdateAllUnprizeSpots => {
-                        match crate::service::update_all_unprize_spots().await {
-                            Ok(_) => ResponseMessage {
-                                request_uuid: envelope.uuid.clone(),
-                                success: true,
-                                data: Some(
-                                    serde_json::json!({"message": "All unprize spots updated successfully"}),
-                                ),
-                                error: None,
-                            },
-                            Err(e) => ResponseMessage {
-                                request_uuid: envelope.uuid.clone(),
-                                success: false,
-                                data: None,
-                                error: Some(format!("Failed to update unprize spots: {e}")),
-                            },
-                        }
-                    }
-                    _ => {
-                        // other RPC services are not implemented yet
-                        ResponseMessage {
-                            request_uuid: envelope.uuid.clone(),
-                            success: false,
-                            data: None,
-                            error: Some(format!("RPC service {service:?} not implemented yet")),
-                        }
-                    }
-                }
-            }
-            _ => {
-                return Err(anyhow!("Expected Request, got {:?}", envelope.kind));
-            }
-        };
-
-        let response_envelope =
-            IpcEnvelope::new_with_uuid(IpcKind::Response(true), response, envelope.uuid);
-
-        Self::send_message(stream, &response_envelope).await
+        Self::send_message(stream, &response).await
     }
 
     /// Get current application state
@@ -335,10 +239,7 @@ impl IpcServer {
     }
 
     /// Process and send message to the client
-    async fn send_message<T: serde::Serialize>(
-        stream: &mut UnixStream,
-        envelope: &IpcEnvelope<T>,
-    ) -> Result<()> {
+    async fn send_message(stream: &mut UnixStream, envelope: &IpcEnvelope) -> Result<()> {
         let encoded = IpcCodec::encode(envelope)?;
         stream.write_all(&encoded).await?;
         Ok(())
@@ -357,9 +258,133 @@ impl IpcServer {
             details: None,
         };
 
-        let error_envelope = IpcEnvelope::new_with_uuid(IpcKind::Err, error_msg, request_uuid);
+        let error_envelope = IpcEnvelope::new_with_uuid(
+            IpcKind::Err,
+            serde_json::to_value(error_msg)?,
+            request_uuid,
+        );
 
         Self::send_message(stream, &error_envelope).await
+    }
+
+    /// Process RPC request from the client
+    #[expect(clippy::too_many_lines)]
+    async fn handle_request(
+        envelope: IpcEnvelope,
+        stream: &mut UnixStream,
+        state: &Arc<RwLock<AppState>>,
+    ) -> Result<()> {
+        log::debug!(
+            "Received RPC {} request from client, uuid: {}",
+            envelope.kind,
+            envelope.uuid
+        );
+
+        match envelope.kind {
+            IpcKind::Request(service) => {
+                match service {
+                    RpcService::GetCurrentState => {
+                        let current_state = state.read().await.clone();
+                        let response = IpcEnvelope::new_with_uuid(
+                            IpcKind::Response,
+                            serde_json::to_value(current_state)?,
+                            envelope.uuid,
+                        );
+                        Self::send_message(stream, &response).await
+                    }
+                    RpcService::UpdateLatestTicket => {
+                        let ticket = crate::service::update_latest_ticket()
+                            .await
+                            .map_err(|e| e.to_string());
+                        let response = IpcEnvelope::new_with_uuid(
+                            IpcKind::Response,
+                            serde_json::to_value(ticket)?,
+                            envelope.uuid,
+                        );
+                        Self::send_message(stream, &response).await
+                    }
+                    RpcService::GetLatestPeriod => {
+                        let next_period = crate::service::get_next_period()
+                            .await
+                            .map_err(|e| e.to_string());
+                        let response = IpcEnvelope::new_with_uuid(
+                            IpcKind::Response,
+                            serde_json::to_value(next_period)?,
+                            envelope.uuid,
+                        );
+                        Self::send_message(stream, &response).await
+                    }
+                    RpcService::UpdateAllUnprizeSpots => {
+                        let state = crate::service::update_all_unprize_spots()
+                            .await
+                            .map_err(|e| e.to_string());
+                        let response = IpcEnvelope::new_with_uuid(
+                            IpcKind::Response,
+                            serde_json::to_value(state)?,
+                            envelope.uuid,
+                        );
+
+                        Self::send_message(stream, &response).await
+                    }
+                    RpcService::DeprecatedLastBatchUnprizedSpot => {
+                        let result = crate::service::deprecated_last_batch_unprized_spot()
+                            .await
+                            .map_err(|e| e.to_string());
+                        let response = IpcEnvelope::new_with_uuid(
+                            IpcKind::Response,
+                            serde_json::to_value(result)?,
+                            envelope.uuid,
+                        );
+
+                        Self::send_message(stream, &response).await
+                    }
+                    RpcService::GetUnprizeSpots => {
+                        let dballs = crate::service::get_next_period_unprized_spots()
+                            .await
+                            .map_err(|e| e.to_string());
+                        let response = IpcEnvelope::new_with_uuid(
+                            IpcKind::Response,
+                            serde_json::to_value(dballs)?,
+                            envelope.uuid,
+                        );
+                        Self::send_message(stream, &response).await
+                    }
+                    RpcService::GetPrizedSpots => {
+                        let dballs = crate::service::get_prized_spots()
+                            .await
+                            .map_err(|e| e.to_string());
+                        let response = IpcEnvelope::new_with_uuid(
+                            IpcKind::Response,
+                            serde_json::to_value(dballs)?,
+                            envelope.uuid,
+                        );
+                        Self::send_message(stream, &response).await
+                    }
+                    RpcService::GenerateBatchSpots => {
+                        let result = crate::service::generate_batch_spots()
+                            .await
+                            .map_err(|e| e.to_string());
+                        let response = IpcEnvelope::new_with_uuid(
+                            IpcKind::Response,
+                            serde_json::to_value(result)?,
+                            envelope.uuid,
+                        );
+                        Self::send_message(stream, &response).await
+                    }
+                    _ => {
+                        // other RPC services are not implemented yet
+                        let response = IpcEnvelope::new(
+                            IpcKind::Response,
+                            serde_json::to_value(format!(
+                                "RPC service {service:?} not implemented yet"
+                            ))?,
+                        );
+                        Self::send_message(stream, &response).await
+                    }
+                }
+            }
+            _ => Err(anyhow!("Expected Request, got {:?}", envelope.kind)),
+        }
     }
 }
 

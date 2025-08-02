@@ -4,7 +4,7 @@ use std::fmt::Display;
 
 const COST_PER_TICKET: usize = 2;
 
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub struct DBall {
     pub rball: [u8; 6],
     pub bball: u8,

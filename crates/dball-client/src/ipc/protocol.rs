@@ -6,9 +6,10 @@ use std::time::Duration;
 /// Rpc service definition
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub enum RpcService {
-    InsertNewSpotsNextPeriod,
+    GenerateBatchSpots,
 
     UpdateAllUnprizeSpots,
+    DeprecatedLastBatchUnprizedSpot,
 
     UpdateLatestTicket,
     CrawlAllTickets,
@@ -18,6 +19,7 @@ pub enum RpcService {
     GetCurrentState,
     GetLatestPeriod,
     GetUnprizeSpots,
+    GetPrizedSpots,
 
     Shutdown,
     Restart,
@@ -63,18 +65,18 @@ pub enum EventType {
     ApiStatus,
 }
 
-/// Response message
-#[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct ResponseMessage {
-    /// UUID of the corresponding request
-    pub request_uuid: String,
-    /// Whether the operation was successful
-    pub success: bool,
-    /// Return data (JSON format)
-    pub data: Option<serde_json::Value>,
-    /// Error information
-    pub error: Option<String>,
-}
+// /// Response message
+// #[derive(Serialize, Deserialize, Debug, Clone)]
+// pub struct ResponseMessage {
+//     /// UUID of the corresponding request
+//     pub request_uuid: String,
+//     /// Whether the operation was successful
+//     pub success: bool,
+//     /// Return data (JSON format)
+//     pub data: Option<serde_json::Value>,
+//     /// Error information
+//     pub error: Option<String>,
+// }
 
 /// Event notification message
 #[derive(Serialize, Deserialize, Debug, Clone)]

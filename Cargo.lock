@@ -362,6 +362,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "async-lazy"
+version = "0.1.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "42b26d628201db54edfaa7e0f9848295b272610d97759a0ff61d6de7bb885b5f"
+dependencies = [
+ "tokio",
+]
+
+[[package]]
 name = "async-lock"
 version = "3.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1020,6 +1029,7 @@ name = "dball"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "async-lazy",
  "chrono",
  "criterion",
  "crossterm",

@@ -131,6 +131,7 @@ impl DaemonService {
         self.state.read().await.clone()
     }
 
+    // TODO: remove this method once IPC server is fully implemented
     /// create initial application state
     async fn create_initial_state() -> Result<AppState> {
         use crate::db::{spot, tickets};
@@ -138,14 +139,14 @@ impl DaemonService {
         use chrono::Utc;
         use std::time::Duration;
 
-        // 从现有service模块获取实际状态
+        // get latest ticket information
         let (current_period, next_period) = match crate::service::update_latest_ticket().await {
             Ok(latest_period) => {
                 let next = crate::service::get_next_period().await.unwrap_or_else(|_| {
-                    let next_num = latest_period.parse::<i32>().unwrap_or(25001) + 1;
+                    let next_num = latest_period.period.parse::<i32>().unwrap_or(25001) + 1;
                     next_num.to_string()
                 });
-                (latest_period, next)
+                (latest_period.period, next)
             }
             Err(e) => {
                 log::warn!("Failed to get latest period: {e}, using defaults");

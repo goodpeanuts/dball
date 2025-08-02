@@ -5,7 +5,7 @@ const YEAR_MODULO: usize = 100;
 /// Get the next period based on the latest ticket
 pub async fn get_next_period() -> anyhow::Result<String> {
     let latest_period = update_latest_ticket().await?;
-    let next_period = latest_period.parse::<i32>()? + 1;
+    let next_period = latest_period.period.parse::<i32>()? + 1;
     log::debug!("Latest period is {latest_period}, next period is {next_period}");
     Ok(next_period.to_string())
 }
@@ -55,8 +55,8 @@ pub async fn update_tickets_with_year(year: usize) -> anyhow::Result<()> {
 }
 
 /// Request and insert latest tickets
-/// Return the newest period
-pub async fn update_latest_ticket() -> anyhow::Result<String> {
+/// Return the latest ticket
+pub async fn update_latest_ticket() -> anyhow::Result<Ticket> {
     use crate::api::MXNZP_PROVIDER;
     use crate::db::tickets;
 
@@ -72,7 +72,7 @@ pub async fn update_latest_ticket() -> anyhow::Result<String> {
     if let Some(query_ticket) = query_tickets {
         if query_ticket == request_latest_ticket {
             log::info!("Latest ticket is up to date");
-            Ok(request_latest_ticket.period)
+            Ok(request_latest_ticket)
         } else {
             anyhow::bail!(
                 "Latest ticket mismatch - database: {}, API: {}",
@@ -86,7 +86,7 @@ pub async fn update_latest_ticket() -> anyhow::Result<String> {
             "Latest ticket {} updated successfully",
             request_latest_ticket.period
         );
-        Ok(request_latest_ticket.period)
+        Ok(request_latest_ticket)
     }
 }
 

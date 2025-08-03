@@ -4,7 +4,7 @@ mod logs;
 mod middle;
 mod nextgen;
 mod open_status;
-mod spot_histroy;
+mod spot_history;
 
 pub(crate) use logs::init_logger;
 
@@ -66,7 +66,7 @@ pub fn MainLayout(mut hooks: Hooks<'_, '_>) -> impl Into<AnyElement<'static>> {
                     background_color: Color::Black,
                     padding: 1,
                 ) {
-                    spot_histroy::SpotHistoryLayout()
+                    spot_history::SpotHistoryLayout()
                 }
             }
 

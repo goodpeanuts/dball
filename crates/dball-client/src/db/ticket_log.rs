@@ -96,7 +96,7 @@ mod test {
     }
 
     #[test]
-    fn retrive_latest_five_records() {
+    fn retrieve_latest_five_records() {
         match get_latest_records(5) {
             Ok(records) => {
                 records.iter().for_each(|r| log::info!("{r}"));
@@ -130,7 +130,7 @@ mod test {
     }
 
     #[test]
-    fn retrive_max_jackpot_record() {
+    fn retrieve_max_jackpot_record() {
         match get_max_jackpot_record() {
             Ok(record) => {
                 log::info!("{record}");

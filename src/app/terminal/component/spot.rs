@@ -14,7 +14,7 @@ impl Default for SpotProps {
         Self {
             value: Spot {
                 id: Some(1),
-                period: "[deafult]".to_owned(),
+                period: "[default]".to_owned(),
                 red1: 1,
                 red2: 2,
                 red3: 3,
@@ -50,7 +50,7 @@ pub fn SpotComponent(_hooks: Hooks<'_, '_>, props: &SpotProps) -> impl Into<AnyE
 
     let multiplier_str = format!("×{}", spot.magnification);
 
-    // TODO: display specfic status
+    // TODO: display specific status
     let (status_text, status_color) = match spot.prize_status {
         Some(0) => ("non-prize", Color::White),
         None => ("pending", Color::Yellow),

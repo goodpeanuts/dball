@@ -20,14 +20,14 @@ fn main() -> eframe::Result {
     eframe::run_native(
         "double",
         native_options,
-        Box::new(|cc| Ok(Box::new(dball::app::eframe::TemplateApp::new(cc)))),
+        Box::new(|cc| Ok(Box::new(dball::eframe::TemplateApp::new(cc)))),
     )
 }
 
 #[cfg(all(not(target_arch = "wasm32"), feature = "terminal"))]
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
-    use dball::app::terminal::DballApp;
+    use dball::terminal::DballApp;
     use dball_client::ipc::client::IpcClient;
     use iocraft::prelude::*;
     IpcClient::new().connect().await?;
@@ -62,7 +62,7 @@ fn main() {
             .start(
                 canvas,
                 web_options,
-                Box::new(|cc| Ok(Box::new(dball::app::eframe::TemplateApp::new(cc)))),
+                Box::new(|cc| Ok(Box::new(dball::eframe::TemplateApp::new(cc)))),
             )
             .await;
 

@@ -101,7 +101,7 @@ pub async fn update_tickets_by_period(period: &str) -> anyhow::Result<bool> {
     // Check if period is longer than 5 digits and truncate if necessary
     let period = if period.len() > 5 {
         let period_5digit = &period[period.len() - 5..];
-        log::warn!(
+        log::debug!(
             "Period {period} is longer than 5 digits, truncating to last 5 digits {period_5digit}"
         );
         period_5digit
@@ -199,7 +199,7 @@ async fn update_tickets_after_period(start_period_5digit: usize) -> anyhow::Resu
     const MAX_CONSECUTIVE_FAILURES: usize = 3;
 
     loop {
-        let period = period_num.to_string();
+        let period = format!("{:05}", period_num);
 
         match update_tickets_by_period(&period).await {
             Ok(_) => (),

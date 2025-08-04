@@ -147,10 +147,14 @@ impl IpcClient {
 
         if let Some(sender) = &self.message_sender {
             sender.send(envelope)?;
+            const TIMEOUT_SEC: u64 = 60 * 60 * 24;
 
             // wait for response with timeout
-            match tokio::time::timeout(tokio::time::Duration::from_secs(30), response_receiver)
-                .await
+            match tokio::time::timeout(
+                tokio::time::Duration::from_secs(TIMEOUT_SEC),
+                response_receiver,
+            )
+            .await
             {
                 Ok(Ok(response)) => Ok(response),
                 Ok(Err(_)) => {

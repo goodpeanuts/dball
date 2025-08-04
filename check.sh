@@ -6,6 +6,14 @@ cargo check --quiet --workspace --all-targets
 cargo check --quiet --workspace --lib --target wasm32-unknown-unknown --exclude dball-client
 cargo fmt --all -- --check
 cargo clippy --quiet --workspace --all-targets --all-features --  -D warnings -W clippy::all
+
+trunk build
+
+# # cargo install --locked cargo-deny
+# cargo deny check -d
+# # cargo install typos-cli
+# typos
+
+# cargo test 
 cargo test --quiet --workspace --all-targets --all-features
 cargo test --quiet --workspace --doc
-trunk build

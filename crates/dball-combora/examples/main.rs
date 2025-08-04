@@ -1,8 +1,10 @@
-use dball_combora::generator::Generator;
-
 fn main() -> anyhow::Result<()> {
-    println!("Running in terminal mode. This is a placeholder for terminal-specific logic.");
+    env_logger::Builder::new()
+        .filter_level(log::LevelFilter::Debug)
+        .init();
+
     use dball_combora::dball::DBallBatch;
+    use dball_combora::generator::Generator;
 
     let bluemorn = Generator::create_generator(Generator::BlueMorn);
     let tickets = bluemorn.generate_batch()?;

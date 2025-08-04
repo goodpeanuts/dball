@@ -5,11 +5,12 @@ pub enum DBallChecker {
     AllSingleDigits,
     AllEvenOrOdd,
     RedConflictsWithBlue,
-    AvgExtreme,
     SumExtreme,
     RangeExtreme,
+    BatchRBallSumExtreme,
     BatchHasDuplicateCombinations,
     BatchTopRedNumberFrequencies,
+    BatchBlueBallDuplicate,
     BatchBlueBallDistribution,
     BatchHighCosineSimilarity,
 }
@@ -33,9 +34,11 @@ impl DBall {
             .then_some(DBallChecker::RedConflictsWithBlue)
     }
 
-    pub fn avg_extreme(&self) -> Option<DBallChecker> {
-        let avg = self.rball.iter().copied().sum::<u8>() / 5;
-        (!(10..=21).contains(&avg)).then_some(DBallChecker::AvgExtreme)
+    pub fn sum_extreme(&self) -> Option<DBallChecker> {
+        const SUM_EXTREME_MIN: u8 = 13 * 5;
+        const SUM_EXTREME_MAX: u8 = 19 * 5;
+        let sum = self.rball.iter().copied().sum::<u8>();
+        (!(SUM_EXTREME_MIN..=SUM_EXTREME_MAX).contains(&sum)).then_some(DBallChecker::SumExtreme)
     }
 
     pub fn is_range_extreme(&self) -> Option<DBallChecker> {
@@ -66,6 +69,18 @@ impl DBall {
 }
 
 impl DBallBatch {
+    pub fn batch_sum_extreme(&self) -> Option<DBallChecker> {
+        const SUM_EXTREME_MIN: usize = 13 * 5 * 5;
+        const SUM_EXTREME_MAX: usize = 19 * 5 * 5;
+        let sum = self
+            .0
+            .iter()
+            .map(|b| b.rball.iter().map(|n| *n as usize).sum::<usize>())
+            .sum::<usize>();
+        (!(SUM_EXTREME_MIN..=SUM_EXTREME_MAX).contains(&sum))
+            .then_some(DBallChecker::BatchRBallSumExtreme)
+    }
+
     pub fn has_duplicate_combinations(&self) -> Option<DBallChecker> {
         let mut seen = HashSet::new();
         for ball in &self.0 {
@@ -93,8 +108,7 @@ impl DBallBatch {
             .take(top_n)
             .collect::<Vec<(u8, usize)>>();
         if let (Some((_, count_first)), Some((_, count_last))) = (vec.first(), vec.last()) {
-            (count_first - count_last)
-                .ge(&3)
+            ((count_first - count_last).ge(&3) || (count_first.gt(&2)))
                 .then_some(DBallChecker::BatchTopRedNumberFrequencies)
         } else {
             None
@@ -102,18 +116,23 @@ impl DBallBatch {
     }
 
     pub fn blue_ball_distribution(&self) -> Option<DBallChecker> {
-        let mut b = 0;
-        let mut cnt = 0;
-        for ball in &self.0 {
-            if cnt == 0 && b != ball.bball {
-                b = ball.bball;
-                cnt += 1;
-            } else {
-                cnt -= 1;
-            }
+        let avg = self.0.iter().map(|b| b.bball).sum::<u8>() as f64 / self.0.len() as f64;
+        if !(6.0..=10.0).contains(&avg) {
+            return Some(DBallChecker::BatchBlueBallDistribution);
         }
-        cnt.gt(&2)
-            .then_some(DBallChecker::BatchBlueBallDistribution)
+        None
+    }
+
+    pub fn duplicate_bball(&self) -> Option<DBallChecker> {
+        let mut bball_count = HashMap::new();
+        for ball in &self.0 {
+            *bball_count.entry(ball.bball).or_insert(0) += 1;
+        }
+        if bball_count.values().any(|&count| count > 1) {
+            Some(DBallChecker::BatchBlueBallDuplicate)
+        } else {
+            None
+        }
     }
 
     pub fn has_high_cosine_similarity(&self) -> Option<DBallChecker> {
@@ -132,6 +151,9 @@ impl DBallBatch {
             checks.push(check);
         }
         if let Some(check) = self.blue_ball_distribution() {
+            checks.push(check);
+        }
+        if let Some(check) = self.duplicate_bball() {
             checks.push(check);
         }
         if let Some(check) = self.has_high_cosine_similarity() {

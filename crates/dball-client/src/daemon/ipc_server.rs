@@ -156,7 +156,6 @@ impl IpcServer {
                         }
                         Err(broadcast::error::RecvError::Lagged(_)) => {
                             log::warn!("Client lagged behind on state updates");
-                            continue;
                         }
                         Err(broadcast::error::RecvError::Closed) => {
                             log::info!("State broadcaster closed");

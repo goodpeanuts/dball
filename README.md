@@ -1,7 +1,69 @@
-# eframe template
+# DBall
 
-[![dependency status](https://deps.rs/repo/github/emilk/eframe_template/status.svg)](https://deps.rs/repo/github/emilk/eframe_template)
-[![Build Status](https://github.com/emilk/eframe_template/workflows/CI/badge.svg)](https://github.com/emilk/eframe_template/actions?workflow=CI)
+[![dependency status](https://deps.rs/repo/github/goodpeanuts/dball/status.svg)](https://deps.rs/repo/github/goodpeanuts/dball)
+[![Build Status](https://github.com/goodpeanuts/dball/workflows/CI/badge.svg)](https://github.com/goodpeanuts/dball/actions?workflow=CI)
+
+# Dev prepare
+
+## Install tools
+
+### [Cargo deny](https://embarkstudios.github.io/cargo-deny/index.html)
+
+```bash
+cargo install --locked cargo-deny && cargo deny init && cargo deny check
+```
+
+### [Pre-commit](https://pre-commit.com/#usage)
+
+It is a multi-language package manager for pre-commit hooks. You specify a list of hooks you want and pre-commit manages the installation and execution of any hook written in any language before every commit. pre-commit is specifically designed to not require root access. If one of your developers doesn’t have node installed but modifies a JavaScript file, pre-commit automatically handles downloading and building node to run eslint without root.
+
+```bash
+brew install pre-commit
+```
+
+setup pre-commit hooks:
+
+```bash
+pre-commit install
+```
+
+### typos
+
+Typos is a spell checker for source code.
+
+```bash
+cargo install typos-cli
+```
+
+### [cargo-llvm-cov](https://github.com/taiki-e/cargo-llvm-cov)
+
+cargo-llvm-cov is a code coverage tool for Rust using LLVM.
+
+```bash
+cargo install cargo-llvm-cov
+cargo llvm-cov --all-features --all-targets --workspace --html
+cargo llvm-cov --open
+```
+
+### Git cliff
+
+Git cliff is used to generate changelogs from commit messages.
+
+```bash
+cargo install git-cliff
+```
+
+
+### cargo nextest
+
+Nextest is a boosted test runner for Rust.
+
+```bash
+cargo nextest
+```
+
+
+# eframe
 
 This is a template repo for [eframe](https://github.com/emilk/egui/tree/master/crates/eframe), a framework for writing apps using [egui](https://github.com/emilk/egui/).
 
@@ -11,7 +73,7 @@ You can compile your app natively or for the web, and share it using Github Page
 
 ## Getting started
 
-Start by clicking "Use this template" at https://github.com/emilk/eframe_template/ or follow [these instructions](https://docs.github.com/en/free-pro-team@latest/github/creating-cloning-and-archiving-repositories/creating-a-repository-from-a-template).
+Start by clicking "Use this template" at https://github.com/goodpeanuts/dball/ or follow [these instructions](https://docs.github.com/en/free-pro-team@latest/github/creating-cloning-and-archiving-repositories/creating-a-repository-from-a-template).
 
 Change the name of the crate: Choose a good name for your project, and change the name to it in:
 * `Cargo.toml`
@@ -80,6 +142,6 @@ You can test the template app at <https://emilk.github.io/eframe_template/>.
 
 ## Updating egui
 
-As of 2023, egui is in active development with frequent releases with breaking changes. [eframe_template](https://github.com/emilk/eframe_template/) will be updated in lock-step to always use the latest version of egui.
+As of 2023, egui is in active development with frequent releases with breaking changes. [eframe_template](https://github.com/goodpeanuts/dball/) will be updated in lock-step to always use the latest version of egui.
 
 When updating `egui` and `eframe` it is recommended you do so one version at the time, and read about the changes in [the egui changelog](https://github.com/emilk/egui/blob/master/CHANGELOG.md) and [eframe changelog](https://github.com/emilk/egui/blob/master/crates/eframe/CHANGELOG.md).

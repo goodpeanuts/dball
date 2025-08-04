@@ -1,0 +1,65 @@
+name: Test
+
+on: [pull_request, push]
+
+jobs:
+  test:
+    name: Test Suite
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions-rs/toolchain@v1
+        with:
+          profile: minimal
+          toolchain: stable
+          override: true
+      - run: sudo apt-get install libxcb-render0-dev libxcb-shape0-dev libxcb-xfixes0-dev libxkbcommon-dev libssl-dev
+      - uses: actions-rs/cargo@v1
+        with:
+          command: test
+          args: --lib
+
+  # coverage:
+  #   runs-on: ubuntu-latest
+  #   environment: ACTION
+  #   env:
+  #     CARGO_TERM_COLOR: always
+  #     RUST_LOG: debug
+  #     DATABASE_URL: tdatabase/history.db
+  #     TEST_DATABASE_URL: tdatabase/test.db
+  #     MXNZP_APP_ID: ${{ secrets.MXNZP_APP_ID }}
+  #     MXNZP_APP_SECRET: ${{ secrets.MXNZP_APP_SECRET }}
+
+  #   steps:
+  #     - uses: actions/checkout@v4
+  #     - uses: actions-rs/toolchain@v1
+  #       with:
+  #         profile: minimal
+  #         toolchain: nightly
+  #         override: true
+
+  #     - name: Install cargo-llvm-cov
+  #       uses: taiki-e/install-action@cargo-llvm-cov
+  #     - name: Install diesel CLI
+  #       run: cargo install diesel_cli --no-default-features --features sqlite
+  #     - name: Prepare sqlite database
+  #       run: |
+  #         mkdir tdatabase
+  #         touch tdatabase/history.db
+
+  #     # - name: Generate code coverage
+  #     #   run: cargo llvm-cov --all-targets --all-features --workspace --lcov --output-path lcov.info
+  #     # - name: Upload coverage to Codecov
+  #     #   uses: codecov/codecov-action@v3
+  #     #   with:
+  #     #     # token: ${{ secrets.CODECOV_TOKEN }} # not required for public repos
+  #     #     files: lcov.info
+  #     #     fail_ci_if_error: true
+  #     - name: Generate code coverage
+  #       run: cargo llvm-cov --all-targets --all-features --workspace --lcov --output-path coverage-report
+
+  #     - name: Upload coverage report as artifact
+  #       uses: actions/upload-artifact@v4
+  #       with:
+  #         name: coverage-report
+  #         path: coverage-report

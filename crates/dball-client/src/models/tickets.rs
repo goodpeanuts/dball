@@ -1,4 +1,3 @@
-use ansi_term::Colour::{Blue, Green, Red};
 use chrono::NaiveDateTime;
 use dball_combora::dball::DBall;
 use diesel::prelude::*;
@@ -239,19 +238,25 @@ impl std::error::Error for TicketError {}
 
 impl std::fmt::Display for Ticket {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        use console::style;
+
         write!(
             f,
             "{} {} {}",
-            Green.bold().paint(format!(
+            style(format!(
                 "{} {}",
                 self.period,
                 self.time.format("%Y-%m-%d %H:%M:%S")
-            )),
-            Red.bold().paint(format!(
+            ))
+            .green()
+            .bold(),
+            style(format!(
                 "{:02} {:02} {:02} {:02} {:02} {:02}",
                 self.red1, self.red2, self.red3, self.red4, self.red5, self.red6
-            )),
-            Blue.bold().paint(format!("{:02}", self.blue))
+            ))
+            .red()
+            .bold(),
+            style(format!("{:02}", self.blue)).blue().bold()
         )
     }
 }

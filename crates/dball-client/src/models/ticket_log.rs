@@ -107,10 +107,10 @@ impl TicketLog {
     }
 }
 
-use ansi_term::Color::{Blue, Red};
-
 impl std::fmt::Display for TicketLog {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        use console::style;
+
         let red_numbers = self.red_numbers();
         let blue_number = self.blue_number().unwrap_or(0);
 
@@ -119,8 +119,8 @@ impl std::fmt::Display for TicketLog {
             "period: {}, date: {}, numbers: {} + {}",
             self.code,
             self.kj_date.map_or("unknown".to_owned(), |d| d.to_string()),
-            Red.bold().paint(format!("{red_numbers:?}")),
-            Blue.bold().paint(blue_number.to_string())
+            style(format!("{red_numbers:?}")).red().bold(),
+            style(blue_number.to_string()).blue().bold()
         )
     }
 }

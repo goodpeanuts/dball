@@ -8,7 +8,7 @@ tpcq = "test -p dball-client -- --test-threads=1"
 # test aliases for dball-client clean test env
 ctenv = "test -p dball-client -- --test clean_test_env --nocapture --ignored"
 
-# cargo clippy --all  && cargo check --all && cargo fmt --all 
+# cargo clippy --all  && cargo check --all && cargo fmt --all
 
 cfaa = "clippy --fix --allow-dirty --allow-staged"
 
@@ -25,4 +25,4 @@ pd = "run -p dball-client --bin daemon"
 pt = "run -F terminal"
 
 # run all test with next-test
-nt = "nextest run --all --all-features --test-threads=1"
+nt = "nextest run --all-targets --all-features --test-threads=1"

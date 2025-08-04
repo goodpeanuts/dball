@@ -1,4 +1,3 @@
-use ansi_term::Colour::{Blue, Red};
 use serde::{Deserialize, Serialize};
 use std::fmt::Display;
 
@@ -13,10 +12,12 @@ pub struct DBall {
 
 impl Display for DBall {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        use console::style;
+
         write!(
             f,
             "{} {}",
-            Red.bold().paint(format!(
+            style(format!(
                 "{} {} {} {} {} {}",
                 self.rball[0],
                 self.rball[1],
@@ -24,8 +25,10 @@ impl Display for DBall {
                 self.rball[3],
                 self.rball[4],
                 self.rball[5]
-            )),
-            Blue.bold().paint(format!("{}", self.bball))
+            ))
+            .red()
+            .bold(),
+            style(format!("{}", self.bball)).blue().bold()
         )
     }
 }

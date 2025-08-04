@@ -1,4 +1,3 @@
-use ansi_term::Colour::{Blue, Green, Red, Yellow};
 use chrono::NaiveDateTime;
 use dball_combora::dball::{DBall, DBallError, Reward};
 use diesel::prelude::*;
@@ -229,6 +228,7 @@ impl std::error::Error for SpotError {}
 
 impl std::fmt::Display for Spot {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        use console::style;
         // Try to use DBall's display format for the numbers part
         match self.to_dball() {
             Ok(dball) => {
@@ -239,14 +239,14 @@ impl std::fmt::Display for Spot {
                 write!(
                     f,
                     "{} {} {} {} {}",
-                    Red.bold().paint("invalid numbers spot Record:"),
-                    Green.bold().paint(format!("Period:{}", self.period)),
-                    Red.bold().paint(format!(
+                    style("invalid numbers spot Record:").red().bold(),
+                    style(format!("Period:{}", self.period)).green().bold(),
+                    style(format!(
                         "{:02} {:02} {:02} {:02} {:02} {:02}",
                         self.red1, self.red2, self.red3, self.red4, self.red5, self.red6
                     )),
-                    Blue.bold().paint(format!("{:02}", self.blue)),
-                    Yellow.bold().paint(format!("{}x", self.magnification)),
+                    style(format!("{:02}", self.blue)).blue().bold(),
+                    style(format!("{}x", self.magnification)).yellow().bold(),
                 )
             }
         }

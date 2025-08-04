@@ -325,7 +325,7 @@ mod tests {
     #[test]
     fn test_client_state_debug() {
         let state = ClientState::Connected;
-        let debug_str = format!("{:?}", state);
+        let debug_str = format!("{state:?}");
         assert!(debug_str.contains("Connected"));
     }
 }

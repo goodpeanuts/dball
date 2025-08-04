@@ -51,7 +51,7 @@ where
 fn init_test_logger() {
     init_env();
 
-    println!("Initializing test logger");
+    eprintln!("Initializing test logger");
     env_logger::builder()
         .parse_default_env()
         .is_test(true)
@@ -79,7 +79,11 @@ struct TestEnvGuard {
 /// copy test database from main database
 /// return the path of test database
 fn copy_test_db() -> std::path::PathBuf {
-    let root_path = crate::ENV_GUARD.as_ref().unwrap().parent().unwrap();
+    let root_path = crate::ENV_GUARD
+        .as_ref()
+        .expect("ENV_GUARD not initialized")
+        .parent()
+        .expect("env parent path not found");
     let test_db_url = std::env::var("TEST_DATABASE_URL").expect("TEST_DATABASE_URL must be set");
     let main_db_url = std::env::var("DATABASE_URL").expect("DATABASE_URL must be set");
 
@@ -94,13 +98,18 @@ fn copy_test_db() -> std::path::PathBuf {
     ];
 
     for file in &files_to_remove {
-        if file.exists() {
-            let _ = std::fs::remove_file(file);
+        if file.exists() && std::fs::remove_file(file).is_err() {
+            log::debug!("Failed to remove old test db: {}", file.display());
         }
     }
 
     // copy main database as test database
-    std::fs::copy(main_db_path, &test_db_path).unwrap();
+    if std::fs::copy(main_db_path, &test_db_path).is_err() {
+        log::error!(
+            "Failed to copy main db to test db: {}",
+            test_db_path.display()
+        );
+    }
 
     log::debug!("Created test db: {}", test_db_path.display());
     test_db_path

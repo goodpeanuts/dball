@@ -164,7 +164,7 @@ mod tests {
     #[test]
     fn test_rpc_service_serialization() {
         let service =
-            RpcService::UpdateTicketsByPeriod(vec!["2024001".to_string(), "2024002".to_string()]);
+            RpcService::UpdateTicketsByPeriod(vec!["2024001".to_owned(), "2024002".to_owned()]);
         let serialized = serde_json::to_string(&service).expect("Failed to serialize");
         let deserialized: RpcService =
             serde_json::from_str(&serialized).expect("Failed to deserialize");
@@ -182,9 +182,9 @@ mod tests {
     fn test_hello_message() {
         let hello = HelloMessage {
             version: 1,
-            client_info: Some("test_client".to_string()),
+            client_info: Some("test_client".to_owned()),
             server_name: None,
-            supported_features: vec!["basic".to_string(), "advanced".to_string()],
+            supported_features: vec!["basic".to_owned(), "advanced".to_owned()],
         };
 
         let serialized = serde_json::to_string(&hello).expect("Failed to serialize");
@@ -202,8 +202,8 @@ mod tests {
     #[test]
     fn test_app_state_creation() {
         let app_state = AppState {
-            current_period: "2024001".to_string(),
-            next_period: "2024002".to_string(),
+            current_period: "2024001".to_owned(),
+            next_period: "2024002".to_owned(),
             last_draw_time: Some(Utc::now()),
             next_draw_time: None,
             latest_ticket: None,
@@ -212,7 +212,7 @@ mod tests {
             total_investment: 0.0,
             total_return: 0.0,
             api_status: ApiStatusInfo {
-                api_provider: "mxnzp".to_string(),
+                api_provider: "mxnzp".to_owned(),
                 last_success: None,
                 success_rate: 0.95,
                 average_response_time: Duration::from_millis(500),

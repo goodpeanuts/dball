@@ -199,7 +199,7 @@ async fn update_tickets_after_period(start_period_5digit: usize) -> anyhow::Resu
     const MAX_CONSECUTIVE_FAILURES: usize = 3;
 
     loop {
-        let period = format!("{:05}", period_num);
+        let period = format!("{period_num:05}");
 
         match update_tickets_by_period(&period).await {
             Ok(_) => (),

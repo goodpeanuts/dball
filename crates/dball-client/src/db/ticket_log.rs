@@ -99,7 +99,9 @@ mod test {
     fn retrieve_latest_five_records() {
         match get_latest_records(5) {
             Ok(records) => {
-                records.iter().for_each(|r| log::info!("{r}"));
+                for record in &records {
+                    log::info!("{record}");
+                }
             }
             Err(e) => panic!("{e}"),
         }
@@ -123,7 +125,9 @@ mod test {
     fn find_records_contain_number() {
         match find_records_with_number(1) {
             Ok(records) => {
-                records.iter().for_each(|r| log::info!("{r}"));
+                for record in &records {
+                    log::info!("{record}");
+                }
             }
             Err(e) => panic!("{e}"),
         }

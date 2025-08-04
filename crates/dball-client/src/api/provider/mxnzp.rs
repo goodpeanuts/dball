@@ -75,17 +75,18 @@ mod tests {
 
         // Make 3 consecutive requests
         for _ in 0..3 {
-            let _ = provider.get_latest_lottery().await;
+            if let Err(e) = provider.get_latest_lottery().await {
+                log::error!("Failed to get latest lottery: {e}");
+            }
         }
 
         let total_duration = start_time.elapsed();
-        log::debug!("Total duration for 3 requests: {:?}", total_duration);
+        log::debug!("Total duration for 3 requests: {total_duration:?}");
 
         // Total time should be at least 2 seconds (1 second between each of the 3 provider calls)
         assert!(
             total_duration >= std::time::Duration::from_secs(2),
-            "Total duration was {:?}, expected at least 2 seconds due to QPS limiting",
-            total_duration
+            "Total duration was {total_duration:?}, expected at least 2 seconds due to QPS limiting"
         );
     }
 }

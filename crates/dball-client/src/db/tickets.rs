@@ -12,8 +12,7 @@ pub fn insert_ticket(new_ticket: &Ticket) -> anyhow::Result<()> {
         .and_then(|count| {
             if count != 1 {
                 Err(anyhow::anyhow!(
-                    "Expected to insert exactly one ticket, but inserted {}",
-                    count
+                    "Expected to insert exactly one ticket, but inserted {count} instead"
                 ))
             } else {
                 Ok(())
@@ -25,7 +24,7 @@ pub fn get_all_tickets() -> anyhow::Result<Vec<Ticket>> {
     let mut connection = get_db_connection()?;
     tickets::table
         .load::<Ticket>(&mut connection)
-        .map_err(|e| anyhow::anyhow!("Error loading tickets: {}", e))
+        .map_err(|e| anyhow::anyhow!("Error loading tickets: {e}"))
 }
 
 pub fn get_ticket_by_period(period: &str) -> anyhow::Result<Option<Ticket>> {
@@ -40,7 +39,7 @@ pub fn get_ticket_by_period(period: &str) -> anyhow::Result<Option<Ticket>> {
                 std::io::Error::other("Multiple records found, but expected only one"),
             ))),
         })
-        .map_err(|e| anyhow::anyhow!("Error finding tickets for period {}: {}", period, e))
+        .map_err(|e| anyhow::anyhow!("Error finding tickets for period {period}: {e}"))
 }
 
 pub fn get_latest_tickets(limit: i64) -> anyhow::Result<Vec<Ticket>> {
@@ -49,7 +48,7 @@ pub fn get_latest_tickets(limit: i64) -> anyhow::Result<Vec<Ticket>> {
         .order(tickets::time.desc())
         .limit(limit)
         .load::<Ticket>(&mut connection)
-        .map_err(|e| anyhow::anyhow!("Error loading latest {} tickets: {}", limit, e))
+        .map_err(|e| anyhow::anyhow!("Error loading latest {limit} tickets: {e}"))
 }
 
 pub fn find_tickets_with_red_number(number: i32) -> anyhow::Result<Vec<Ticket>> {
@@ -66,7 +65,7 @@ pub fn find_tickets_with_red_number(number: i32) -> anyhow::Result<Vec<Ticket>> 
         )
         .order(tickets::id.desc())
         .load::<Ticket>(&mut connection)
-        .map_err(|e| anyhow::anyhow!("Error finding tickets with red number {}: {}", number, e))
+        .map_err(|e| anyhow::anyhow!("Error finding tickets with red number {number}: {e}"))
 }
 
 pub fn find_tickets_with_blue_number(blue: i32) -> anyhow::Result<Vec<Ticket>> {
@@ -75,7 +74,7 @@ pub fn find_tickets_with_blue_number(blue: i32) -> anyhow::Result<Vec<Ticket>> {
         .filter(tickets::blue.eq(blue))
         .order(tickets::id.desc())
         .load::<Ticket>(&mut connection)
-        .map_err(|e| anyhow::anyhow!("Error finding tickets with blue number {}: {}", blue, e))
+        .map_err(|e| anyhow::anyhow!("Error finding tickets with blue number {blue}: {e}"))
 }
 
 pub fn count_tickets() -> anyhow::Result<i64> {
@@ -83,7 +82,7 @@ pub fn count_tickets() -> anyhow::Result<i64> {
     tickets::table
         .count()
         .get_result(&mut connection)
-        .map_err(|e| anyhow::anyhow!("Error counting tickets: {}", e))
+        .map_err(|e| anyhow::anyhow!("Error counting tickets: {e}"))
 }
 
 #[cfg(test)]
@@ -93,14 +92,14 @@ mod test {
     fn test_insert_into_db() -> anyhow::Result<()> {
         // Create a test ticket
         let test_ticket = Ticket::new(
-            "2018003".to_string(),
+            "2018003".to_owned(),
             "2018-11-20 21:18:20",
             &[3, 7, 15, 22, 28, 33],
             12,
         )?;
 
         if let Err(e) = get_ticket_by_period(&test_ticket.period) {
-            log::error!("Failed to find tickets by period: {}", e);
+            log::error!("Failed to find tickets by period: {e}");
             return Err(e);
         }
 
@@ -113,9 +112,9 @@ mod test {
 
         match get_all_tickets() {
             Ok(tickets) => {
-                tickets.iter().for_each(|ticket| {
-                    log::info!("{}", ticket);
-                });
+                for ticket in &tickets {
+                    log::info!("{ticket}");
+                }
 
                 Ok(())
             }

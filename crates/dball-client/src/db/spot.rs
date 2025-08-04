@@ -225,10 +225,10 @@ mod test {
         // Retrieve all spots
         match get_all_spots() {
             Ok(spots) => {
-                log::info!("Successfully retrieved {} spots:", spots.len());
-                spots.iter().for_each(|spot| {
-                    log::info!("{}", spot);
-                });
+                log::info!("Successfully retrieved {count} spots:", count = spots.len());
+                for spot in &spots {
+                    log::info!("{spot}");
+                }
 
                 Ok(())
             }
@@ -240,7 +240,7 @@ mod test {
     fn test_count_spots() -> anyhow::Result<()> {
         match count_spots() {
             Ok(count) => {
-                log::info!("Total spots count: {}", count);
+                log::info!("Total spots count: {count}");
                 assert!(count >= 0);
                 Ok(())
             }
@@ -256,9 +256,9 @@ mod test {
         match get_latest_spots(5) {
             Ok(spots) => {
                 log::info!("Latest 5 spots:");
-                spots.iter().for_each(|spot| {
-                    log::info!("{}", spot);
-                });
+                for spot in &spots {
+                    log::info!("{spot}");
+                }
                 Ok(())
             }
             Err(e) => {
@@ -274,9 +274,9 @@ mod test {
         match get_spots_by_period(period) {
             Ok(spots) => {
                 log::info!("Found {} spots for period {}", spots.len(), period);
-                spots.iter().for_each(|spot| {
-                    log::info!("{}", spot);
-                });
+                for spot in &spots {
+                    log::info!("{spot}");
+                }
                 Ok(())
             }
             Err(e) => {
@@ -296,9 +296,9 @@ mod test {
                     spots.len(),
                     red_number
                 );
-                spots.iter().for_each(|spot| {
-                    log::info!("{}", spot);
-                });
+                for spot in &spots {
+                    log::info!("{spot}");
+                }
                 Ok(())
             }
             Err(e) => {
@@ -318,9 +318,9 @@ mod test {
                     spots.len(),
                     blue_number
                 );
-                spots.iter().for_each(|spot| {
-                    log::info!("{}", spot);
-                });
+                for spot in &spots {
+                    log::info!("{spot}");
+                }
                 Ok(())
             }
             Err(e) => {
@@ -335,9 +335,9 @@ mod test {
         // Test finding spots waiting for results (None)
         match find_spots_by_prize_status(None) {
             Ok(spots) => {
-                log::info!("Found {} spots waiting for results", spots.len());
+                log::debug!("Found {} spots waiting for results", spots.len());
                 spots.iter().take(3).for_each(|spot| {
-                    log::info!("{}", spot);
+                    log::debug!("{spot}");
                 });
                 Ok(())
             }
@@ -352,10 +352,10 @@ mod test {
     fn test_find_winning_spots() -> anyhow::Result<()> {
         match find_winning_spots() {
             Ok(spots) => {
-                log::info!("Found {} winning spots", spots.len());
-                spots.iter().for_each(|spot| {
-                    log::info!("{}", spot);
-                });
+                log::info!("Found {count} winning spots", count = spots.len());
+                for spot in &spots {
+                    log::info!("{spot}");
+                }
                 Ok(())
             }
             Err(e) => {
@@ -370,7 +370,7 @@ mod test {
         let period = "2025084";
         match count_spots_by_period(period) {
             Ok(count) => {
-                log::info!("Found {} spots for period {}", count, period);
+                log::info!("Found {count} spots for period {period}");
                 assert!(count >= 0);
                 Ok(())
             }
@@ -385,7 +385,7 @@ mod test {
     fn test_insert_spot_from_dball() -> anyhow::Result<()> {
         let dball = DBall::new(vec![5, 10, 15, 20, 25, 30], 8, 1)
             .map_err(|e| anyhow::anyhow!("DBall creation failed: {e}"))?;
-        let period = "2025085".to_string();
+        let period = "2025085".to_owned();
 
         match insert_spot_from_dball(&period, &dball, None) {
             Ok(()) => {
@@ -426,17 +426,14 @@ mod test {
 
         // Mark them as deprecated
         let updated_count = mark_spots_deprecated(&spot_ids)?;
-        log::info!("Marked {} spots as deprecated", updated_count);
+        log::info!("Marked {updated_count} spots as deprecated");
 
         // Verify they were marked
         let updated_spots = get_spots_by_period(period)?;
-        let deprecated_count = updated_spots
-            .iter()
-            .filter(|s| s.deprecated == true)
-            .count();
+        let deprecated_count = updated_spots.iter().filter(|s| s.deprecated).count();
 
         assert!(deprecated_count > 0);
-        log::info!("Found {} deprecated spots after marking", deprecated_count);
+        log::info!("Found {deprecated_count} deprecated spots after marking");
 
         Ok(())
     }

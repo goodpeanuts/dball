@@ -242,8 +242,8 @@ mod tests {
 
         // 创建测试状态
         let test_state = AppState {
-            current_period: "test".to_string(),
-            next_period: "test".to_string(),
+            current_period: "test".to_owned(),
+            next_period: "test".to_owned(),
             last_draw_time: None,
             next_draw_time: None,
             latest_ticket: None,
@@ -252,7 +252,7 @@ mod tests {
             total_investment: 0.0,
             total_return: 0.0,
             api_status: crate::ipc::protocol::ApiStatusInfo {
-                api_provider: "test".to_string(),
+                api_provider: "mxnzp".to_owned(),
                 last_success: None,
                 success_rate: 0.0,
                 average_response_time: Duration::from_millis(1000),
@@ -264,14 +264,20 @@ mod tests {
         };
 
         // 更新状态
-        subscriber.update_state(test_state.clone()).await.unwrap();
+        subscriber
+            .update_state(test_state.clone())
+            .await
+            .expect("Failed to update state");
 
         // 等待状态变更通知
-        receiver.changed().await.unwrap();
+        receiver.changed().await.expect("Failed to wait for change");
 
         // 验证状态已更新
         assert!(receiver.borrow().is_some());
-        let updated_state = subscriber.get_current_state().await.unwrap();
+        let updated_state = subscriber
+            .get_current_state()
+            .await
+            .expect("Failed to get current state");
         assert_eq!(updated_state.current_period, "test");
     }
 
@@ -286,8 +292,8 @@ mod tests {
 
         // 添加状态后的统计
         let test_state = AppState {
-            current_period: "test".to_string(),
-            next_period: "test".to_string(),
+            current_period: "test".to_owned(),
+            next_period: "test".to_owned(),
             last_draw_time: None,
             next_draw_time: None,
             latest_ticket: None,
@@ -296,7 +302,7 @@ mod tests {
             total_investment: 0.0,
             total_return: 0.0,
             api_status: crate::ipc::protocol::ApiStatusInfo {
-                api_provider: "mxnzp".to_string(),
+                api_provider: "mxnzp".to_owned(),
                 last_success: None,
                 success_rate: 0.0,
                 average_response_time: Duration::from_millis(1000),
@@ -307,12 +313,15 @@ mod tests {
             last_generation_time: None,
         };
 
-        subscriber.update_state(test_state).await.unwrap();
+        subscriber
+            .update_state(test_state)
+            .await
+            .expect("Failed to update state");
 
         let stats = subscriber.get_state_stats().await;
         assert!(stats.has_state);
         assert_eq!(stats.unprize_spots_count, 5);
-        assert_eq!(stats.api_provider, Some("mxnzp".to_string()));
+        assert_eq!(stats.api_provider, Some("mxnzp".to_owned()));
     }
 
     #[tokio::test]
@@ -325,8 +334,8 @@ mod tests {
             tokio::time::sleep(Duration::from_millis(100)).await;
 
             let test_state = AppState {
-                current_period: "target".to_string(),
-                next_period: "test".to_string(),
+                current_period: "target".to_owned(),
+                next_period: "test".to_owned(),
                 last_draw_time: None,
                 next_draw_time: None,
                 latest_ticket: None,
@@ -335,7 +344,7 @@ mod tests {
                 total_investment: 0.0,
                 total_return: 0.0,
                 api_status: crate::ipc::protocol::ApiStatusInfo {
-                    api_provider: "test".to_string(),
+                    api_provider: "mxnzp".to_owned(),
                     last_success: None,
                     success_rate: 0.0,
                     average_response_time: Duration::from_millis(1000),
@@ -346,14 +355,20 @@ mod tests {
                 last_generation_time: None,
             };
 
-            subscriber_clone.update_state(test_state).await.unwrap();
+            subscriber_clone
+                .update_state(test_state)
+                .await
+                .expect("Failed to update state");
         });
 
         // 等待特定条件
         let mut receiver = subscriber.subscribe_to_changes();
         let result = tokio::time::timeout(Duration::from_secs(1), async {
             loop {
-                receiver.changed().await.unwrap();
+                receiver
+                    .changed()
+                    .await
+                    .expect("Failed to wait for condition");
                 if let Some(state) = &*receiver.borrow() {
                     if state.current_period == "target" {
                         return state.clone();
@@ -364,7 +379,7 @@ mod tests {
         .await;
 
         assert!(result.is_ok());
-        let state = result.unwrap();
+        let state = result.expect("Timeout waiting for condition");
         assert_eq!(state.current_period, "target");
     }
 }

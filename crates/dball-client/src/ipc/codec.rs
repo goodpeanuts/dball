@@ -181,12 +181,15 @@ mod tests {
     fn test_encode_decode_small_message() {
         let hello_msg = HelloMessage {
             version: 1,
-            client_info: Some("test_client".to_string()),
+            client_info: Some("test_client".to_owned()),
             server_name: None,
-            supported_features: vec!["basic".to_string()],
+            supported_features: vec!["basic".to_owned()],
         };
 
-        let envelope = IpcEnvelope::new(IpcKind::Hello, serde_json::to_value(&hello_msg).unwrap());
+        let envelope = IpcEnvelope::new(
+            IpcKind::Hello,
+            serde_json::to_value(&hello_msg).expect("Failed to serialize"),
+        );
 
         // 编码
         let encoded = IpcCodec::encode(&envelope).expect("Failed to encode");
@@ -207,16 +210,19 @@ mod tests {
     #[test]
     fn test_encode_decode_large_message() {
         // 创建一个大消息来触发压缩
-        let large_features: Vec<String> = (0..1000).map(|i| format!("feature_{}", i)).collect();
+        let large_features: Vec<String> = (0..1000).map(|i| format!("feature_{i}")).collect();
 
         let hello_msg = HelloMessage {
             version: 1,
-            client_info: Some("test_client".to_string()),
+            client_info: Some("test_client".to_owned()),
             server_name: None,
             supported_features: large_features.clone(),
         };
 
-        let envelope = IpcEnvelope::new(IpcKind::Hello, serde_json::to_value(&hello_msg).unwrap());
+        let envelope = IpcEnvelope::new(
+            IpcKind::Hello,
+            serde_json::to_value(&hello_msg).expect("Failed to serialize"),
+        );
 
         // 编码
         let encoded = IpcCodec::encode(&envelope).expect("Failed to encode");
@@ -241,12 +247,15 @@ mod tests {
     fn test_frame_buffer() {
         let hello_msg = HelloMessage {
             version: 1,
-            client_info: Some("test_client".to_string()),
+            client_info: Some("test_client".to_owned()),
             server_name: None,
-            supported_features: vec!["basic".to_string()],
+            supported_features: vec!["basic".to_owned()],
         };
 
-        let envelope = IpcEnvelope::new(IpcKind::Hello, serde_json::to_value(&hello_msg).unwrap());
+        let envelope = IpcEnvelope::new(
+            IpcKind::Hello,
+            serde_json::to_value(&hello_msg).expect("Failed to serialize"),
+        );
         let encoded = IpcCodec::encode(&envelope).expect("Failed to encode");
 
         let mut buffer = FrameBuffer::new();
@@ -276,12 +285,15 @@ mod tests {
     fn test_partial_frame() {
         let hello_msg = HelloMessage {
             version: 1,
-            client_info: Some("test_client".to_string()),
+            client_info: Some("test_client".to_owned()),
             server_name: None,
-            supported_features: vec!["basic".to_string()],
+            supported_features: vec!["basic".to_owned()],
         };
 
-        let envelope = IpcEnvelope::new(IpcKind::Hello, serde_json::to_value(&hello_msg).unwrap());
+        let envelope = IpcEnvelope::new(
+            IpcKind::Hello,
+            serde_json::to_value(&hello_msg).expect("Failed to serialize"),
+        );
         let encoded = IpcCodec::encode(&envelope).expect("Failed to encode");
 
         // 测试部分数据解码

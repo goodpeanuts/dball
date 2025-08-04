@@ -101,7 +101,7 @@ impl Ticket {
 
         // Check red ball range (1-33)
         for &ball in &red_numbers {
-            if ball < 1 || ball > 33 {
+            if !(1..=33).contains(&ball) {
                 return Err(TicketError::RedBallOutOfRange(ball));
             }
         }
@@ -263,7 +263,7 @@ mod test {
     fn create_ticket_datetime_fields() -> anyhow::Result<()> {
         // Create a test ticket
         let test_ticket = Ticket::new(
-            "2018005".to_string(),
+            "2018005".to_owned(),
             "2018-11-20 21:18:20",
             &[5, 12, 18, 25, 30, 33],
             15,
@@ -279,7 +279,7 @@ mod test {
         let time_str = "2018-11-20 21:18:20";
         let red_numbers = [1, 5, 12, 18, 23, 31];
 
-        let t = Ticket::new("2018001".to_string(), time_str, &red_numbers, 8);
+        let t = Ticket::new("2018001".to_owned(), time_str, &red_numbers, 8);
         assert!(t.is_ok());
     }
 
@@ -287,7 +287,7 @@ mod test {
     fn create_ticket_with_invalid_time_format() {
         let red_numbers = [1, 5, 12, 18, 23, 31];
 
-        let t = Ticket::new("2018002".to_string(), "invalid-time", &red_numbers, 8);
+        let t = Ticket::new("2018002".to_owned(), "invalid-time", &red_numbers, 8);
         assert!(matches!(t, Err(TicketError::InvalidTimeFormat(_))));
     }
 }

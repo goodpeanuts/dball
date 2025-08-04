@@ -15,7 +15,10 @@ fn gen_unique_vec(n: usize, rng: &mut StdRng) -> Vec<u32> {
 
 /// 生成带重复的数据：先生成唯一，再克隆一部分元素追加形成重复
 fn gen_with_dups_vec(n: usize, dup_fraction: f64, rng: &mut StdRng) -> Vec<u32> {
-    assert!((0.0..=1.0).contains(&dup_fraction));
+    assert!(
+        (0.0..=1.0).contains(&dup_fraction),
+        "dup_fraction must be between 0.0 and 1.0"
+    );
     let mut base = gen_unique_vec(n, rng);
     let dup_count = (n as f64 * dup_fraction).round() as usize;
     if dup_count > 0 {

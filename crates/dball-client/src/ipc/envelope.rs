@@ -71,12 +71,15 @@ mod tests {
     fn test_envelope_creation() {
         let hello_msg = HelloMessage {
             version: 1,
-            client_info: Some("test_client".to_string()),
+            client_info: Some("test_client".to_owned()),
             server_name: None,
-            supported_features: vec!["basic".to_string()],
+            supported_features: vec!["basic".to_owned()],
         };
 
-        let envelope = IpcEnvelope::new(IpcKind::Hello, serde_json::to_value(hello_msg).unwrap());
+        let envelope = IpcEnvelope::new(
+            IpcKind::Hello,
+            serde_json::to_value(hello_msg).expect("Failed to serialize"),
+        );
 
         assert_eq!(envelope.proto, 1);
         assert!(!envelope.uuid.is_empty());
@@ -87,12 +90,15 @@ mod tests {
     fn test_envelope_serialization() {
         let hello_msg = HelloMessage {
             version: 1,
-            client_info: Some("test_client".to_string()),
+            client_info: Some("test_client".to_owned()),
             server_name: None,
-            supported_features: vec!["basic".to_string()],
+            supported_features: vec!["basic".to_owned()],
         };
 
-        let envelope = IpcEnvelope::new(IpcKind::Hello, serde_json::to_value(hello_msg).unwrap());
+        let envelope = IpcEnvelope::new(
+            IpcKind::Hello,
+            serde_json::to_value(hello_msg).expect("Failed to serialize"),
+        );
         let serialized = serde_json::to_string(&envelope).expect("Failed to serialize");
         let deserialized: IpcEnvelope =
             serde_json::from_str(&serialized).expect("Failed to deserialize");

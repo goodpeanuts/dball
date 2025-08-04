@@ -5,7 +5,7 @@ mod specified_ticket;
 #[cfg(test)]
 mod tests {
     use crate::api::MXNZP_PROVIDER;
-    use crate::api::provider::ProviderResponse;
+    use crate::api::provider::ProviderResponse as _;
     use crate::models::Ticket;
 
     #[tokio::test]
@@ -17,7 +17,7 @@ mod tests {
             let data = response.get_data();
             assert!(data.is_some());
 
-            let data = data.unwrap();
+            let data = data.expect("Failed to get data");
             log::debug!("data: {data:#?}");
 
             // 使用 try_from 进行正确的类型转换

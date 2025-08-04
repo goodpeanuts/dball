@@ -450,10 +450,10 @@ mod tests {
     fn test_simplified_provider_config_conversion() {
         let mut simplified = ProviderConfig::default();
         simplified.rest.insert(
-            "test_api".to_string(),
+            "test_api".to_owned(),
             super::super::rest::RestConfig {
-                api_name: "test".to_string(),
-                base_url: "https://example.com".to_string(),
+                api_name: "test".to_owned(),
+                base_url: "https://example.com".to_owned(),
                 timeout_ms: Some(5000),
                 max_retries: None,
                 meta: HashMap::new(),
@@ -469,10 +469,10 @@ mod tests {
     fn test_provider_config_merge() {
         let mut config1 = ProviderConfig::default();
         config1.rest.insert(
-            "api1".to_string(),
+            "api1".to_owned(),
             super::super::rest::RestConfig {
-                api_name: "first".to_string(),
-                base_url: "https://first.com".to_string(),
+                api_name: "first".to_owned(),
+                base_url: "https://first.com".to_owned(),
                 timeout_ms: Some(1000),
                 max_retries: None,
                 meta: HashMap::new(),
@@ -481,20 +481,20 @@ mod tests {
 
         let mut config2 = ProviderConfig::default();
         config2.rest.insert(
-            "api2".to_string(),
+            "api2".to_owned(),
             super::super::rest::RestConfig {
-                api_name: "second".to_string(),
-                base_url: "https://second.com".to_string(),
+                api_name: "second".to_owned(),
+                base_url: "https://second.com".to_owned(),
                 timeout_ms: Some(2000),
                 max_retries: None,
                 meta: HashMap::new(),
             },
         );
         config2.rest.insert(
-            "api1".to_string(), // Duplicate key - should not override config1
+            "api1".to_owned(), // Duplicate key - should not override config1
             super::super::rest::RestConfig {
-                api_name: "should_not_override".to_string(),
-                base_url: "https://should-not-override.com".to_string(),
+                api_name: "should_not_override".to_owned(),
+                base_url: "https://should-not-override.com".to_owned(),
                 timeout_ms: Some(9999),
                 max_retries: None,
                 meta: HashMap::new(),
@@ -513,30 +513,32 @@ mod tests {
         let empty_config = ApiConfig::default();
         assert!(empty_config.is_empty());
 
-        let mut non_empty_config = ApiConfig::default();
-        non_empty_config.mxnzp = Some(ProviderConfig::default());
+        let non_empty_config = ApiConfig {
+            mxnzp: Some(ProviderConfig::default()),
+            ..Default::default()
+        };
         assert!(!non_empty_config.is_empty());
     }
 
     #[tokio::test]
     async fn test_load_provider_configs_empty_directory() {
         let temp_dir = std::env::temp_dir().join("dball_test_empty");
-        std::fs::create_dir_all(&temp_dir).unwrap();
+        std::fs::create_dir_all(&temp_dir).expect("Failed to create temp directory");
 
         let result = ApiConfig::load_provider_configs_from_dir(&temp_dir);
         assert!(result.is_ok());
-        assert!(result.unwrap().is_empty());
+        assert!(result.expect("Failed to load provider configs").is_empty());
 
         std::fs::remove_dir_all(&temp_dir).ok();
     }
 
     #[test]
     fn test_multi_file_config_loading() {
-        use std::io::Write;
+        use std::io::Write as _;
 
         let temp_dir = std::env::temp_dir().join("dball_test_multi");
         let api_dir = temp_dir.join("api");
-        std::fs::create_dir_all(&api_dir).unwrap();
+        std::fs::create_dir_all(&api_dir).expect("Failed to create temp directory");
 
         // Create main config file
         let main_config_content = r#"
@@ -546,8 +548,11 @@ base_url = "https://main.example.com"
 timeout_ms = 5000
 "#;
         let main_config_path = temp_dir.join(API_CONFIG_FILE);
-        let mut main_file = std::fs::File::create(&main_config_path).unwrap();
-        main_file.write_all(main_config_content.as_bytes()).unwrap();
+        let mut main_file =
+            std::fs::File::create(&main_config_path).expect("Failed to create main config file");
+        main_file
+            .write_all(main_config_content.as_bytes())
+            .expect("Failed to write main config");
 
         // Create provider-specific config file
         let provider_config_content = r#"
@@ -562,19 +567,20 @@ base_url = "https://should-not-override.example.com"
 timeout_ms = 9999
 "#;
         let provider_config_path = api_dir.join("mxnzp.toml");
-        let mut provider_file = std::fs::File::create(&provider_config_path).unwrap();
+        let mut provider_file = std::fs::File::create(&provider_config_path)
+            .expect("Failed to create provider config file");
         provider_file
             .write_all(provider_config_content.as_bytes())
-            .unwrap();
+            .expect("Failed to write provider config");
 
         // Test loading
         let result = ApiConfig::new(&main_config_path, &api_dir);
         assert!(result.is_ok());
 
-        let config = result.unwrap();
+        let config = result.expect("Failed to load API config");
         assert!(config.mxnzp.is_some());
 
-        let mxnzp_config = config.mxnzp.unwrap();
+        let mxnzp_config = config.mxnzp.expect("Failed to load mxnzp config");
         assert_eq!(mxnzp_config.rest.len(), 2);
 
         // Main config should take priority
@@ -598,10 +604,10 @@ timeout_ms = 9999
 
     #[test]
     fn test_main_config_validation() {
-        use std::io::Write;
+        use std::io::Write as _;
 
         let temp_dir = std::env::temp_dir().join("dball_test_main_validation");
-        std::fs::create_dir_all(&temp_dir).unwrap();
+        std::fs::create_dir_all(&temp_dir).expect("Failed to create temp dir");
 
         // Test valid main config
         let valid_config = r#"
@@ -610,8 +616,10 @@ api_name = "test"
 base_url = "https://example.com"
 "#;
         let valid_path = temp_dir.join("valid.toml");
-        let mut file = std::fs::File::create(&valid_path).unwrap();
-        file.write_all(valid_config.as_bytes()).unwrap();
+        let mut file =
+            std::fs::File::create(&valid_path).expect("Failed to create valid config file");
+        file.write_all(valid_config.as_bytes())
+            .expect("Failed to write valid config");
 
         let result = ApiConfig::new_api_toml(&valid_path);
         assert!(result.is_ok(), "Valid config should parse successfully");
@@ -623,13 +631,17 @@ api_name = "test"
 base_url = "https://example.com"
 "#;
         let invalid_path = temp_dir.join("invalid.toml");
-        let mut file = std::fs::File::create(&invalid_path).unwrap();
-        file.write_all(invalid_config.as_bytes()).unwrap();
+        let mut file =
+            std::fs::File::create(&invalid_path).expect("Failed to create invalid config file");
+        file.write_all(invalid_config.as_bytes())
+            .expect("Failed to write invalid config");
 
         let result = ApiConfig::new_api_toml(&invalid_path);
         assert!(result.is_err(), "Invalid provider name should cause error");
 
-        let error_msg = result.unwrap_err().to_string();
+        let error_msg = result
+            .expect_err("Invalid provider name should cause error")
+            .to_string();
         assert!(
             error_msg.contains("Invalid provider names") && error_msg.contains("invalid_provider"),
             "Error should mention invalid provider name"
@@ -640,10 +652,10 @@ base_url = "https://example.com"
 
     #[test]
     fn test_provider_config_validation() {
-        use std::io::Write;
+        use std::io::Write as _;
 
         let temp_dir = std::env::temp_dir().join("dball_test_provider_validation");
-        std::fs::create_dir_all(&temp_dir).unwrap();
+        std::fs::create_dir_all(&temp_dir).expect("Failed to create temp dir");
 
         // Test valid provider config
         let valid_config = r#"
@@ -656,11 +668,13 @@ api_name = "test_ws"
 base_url = "wss://example.com"
 "#;
         let valid_path = temp_dir.join("valid_provider.toml");
-        let mut file = std::fs::File::create(&valid_path).unwrap();
-        file.write_all(valid_config.as_bytes()).unwrap();
+        let mut file =
+            std::fs::File::create(&valid_path).expect("Failed to create valid config file");
+        file.write_all(valid_config.as_bytes())
+            .expect("Failed to write valid config");
 
         let result = ApiConfig::load_provider_config_in_dir(&valid_path).map_err(|e| {
-            log::error!("Failed to load provider config: {}", e);
+            log::error!("Failed to load provider config: {e}");
             e
         });
         assert!(
@@ -679,13 +693,17 @@ api_name = "test_rest"
 base_url = "https://example.com"
 "#;
         let invalid_path = temp_dir.join("invalid_provider.toml");
-        let mut file = std::fs::File::create(&invalid_path).unwrap();
-        file.write_all(invalid_config.as_bytes()).unwrap();
+        let mut file =
+            std::fs::File::create(&invalid_path).expect("Failed to create invalid config file");
+        file.write_all(invalid_config.as_bytes())
+            .expect("Failed to write invalid config");
 
         let result = ApiConfig::load_provider_config_in_dir(&invalid_path);
         assert!(result.is_err(), "Invalid protocol name should cause error");
 
-        let error_msg = result.unwrap_err().to_string();
+        let error_msg = result
+            .expect_err("Invalid protocol name should cause error")
+            .to_string();
         assert!(
             error_msg.contains("Invalid protocol names") && error_msg.contains("invalid_protocol"),
             "Error should mention invalid protocol name"
@@ -698,7 +716,7 @@ base_url = "https://example.com"
     fn test_config_validation_integration() {
         // Test that ApiConfig::new rejects invalid provider names
         let temp_dir = std::env::temp_dir().join("dball_test_invalid_integration");
-        std::fs::create_dir_all(&temp_dir).unwrap();
+        std::fs::create_dir_all(&temp_dir).expect("Failed to create temp dir");
 
         let invalid_main_config = r#"
 [invalid_provider.rest.test_api]
@@ -710,14 +728,14 @@ api_name = "test_ws"
 base_url = "wss://example.com"
 "#;
         let invalid_path = temp_dir.join("api_invalid.toml");
-        std::fs::write(&invalid_path, invalid_main_config).unwrap();
+        std::fs::write(&invalid_path, invalid_main_config).expect("Failed to write invalid config");
 
         let result = ApiConfig::new_api_toml(&invalid_path);
         assert!(result.is_err(), "Should reject invalid provider names");
 
-        let error = result.unwrap_err();
+        let error = result.expect_err("Should reject invalid provider names");
         let error_msg = error.to_string();
-        println!("Error message: {}", error_msg);
+        log::debug!("Error message: {error_msg}");
 
         assert!(error_msg.contains("Invalid provider names"));
         assert!(error_msg.contains("invalid_provider"));

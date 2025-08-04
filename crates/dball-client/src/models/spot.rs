@@ -22,9 +22,9 @@ pub struct Spot {
     pub blue: i32,
     pub magnification: i32,
     pub prize_status: Option<i32>,
-    pub deprecated: bool,
     pub created_time: NaiveDateTime,
     pub modified_time: NaiveDateTime,
+    pub deprecated: bool,
 }
 
 impl Spot {

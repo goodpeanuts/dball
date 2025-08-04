@@ -7,7 +7,7 @@ fn main() -> anyhow::Result<()> {
     let bluemorn = Generator::create_generator(Generator::BlueMorn);
     let tickets = bluemorn.generate_batch()?;
     let sims = DBallBatch(tickets.to_vec()).cosine_similarity();
-    println!("Cosine similarities: {:?}", sims);
+    println!("Cosine similarities: {sims:?}");
     println!("Generated tickets:\n{}", DBallBatch(tickets.to_vec()));
 
     Ok(())

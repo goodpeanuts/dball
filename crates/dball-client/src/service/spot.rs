@@ -223,76 +223,81 @@ mod test {
     async fn test_next_draw_time() -> anyhow::Result<()> {
         // 测试当前时间为None的情况
         let next_time = next_draw_time(None).await?;
-        log::debug!("Next draw time from now: {}", next_time);
+        log::debug!("Next draw time from now: {next_time}");
 
         // 测试周一下午 (应该返回周二晚上21:20)
-        let monday = NaiveDate::from_ymd_opt(2024, 1, 1).unwrap(); // 2024-01-01是周一
-        let monday_afternoon = monday.and_hms_opt(15, 0, 0).unwrap();
+        let monday = NaiveDate::from_ymd_opt(2024, 1, 1).ok_or(anyhow::anyhow!("Invalid date"))?; // 2024-01-01是周一
+        let monday_afternoon = monday
+            .and_hms_opt(15, 0, 0)
+            .ok_or(anyhow::anyhow!("Invalid time"))?;
         let monday_utc = Utc.from_utc_datetime(&monday_afternoon);
 
         let next_time_from_monday = next_draw_time(Some(monday_utc)).await?;
-        log::debug!(
-            "Next draw time from Monday afternoon: {}",
-            next_time_from_monday
-        );
+        log::debug!("Next draw time from Monday afternoon: {next_time_from_monday}");
 
         // 验证结果应该是周二北京时间21:20 (UTC时间13:20)
-        let expected_tuesday = monday.succ_opt().unwrap().and_hms_opt(13, 20, 0).unwrap();
+        let expected_tuesday = monday
+            .succ_opt()
+            .ok_or(anyhow::anyhow!("Monday should have a next day"))?
+            .and_hms_opt(13, 20, 0)
+            .ok_or(anyhow::anyhow!("Tuesday should have a valid time"))?;
         let expected_tuesday_utc = Utc.from_utc_datetime(&expected_tuesday);
         assert_eq!(next_time_from_monday, expected_tuesday_utc);
 
         // 测试周二早上 (应该返回当天晚上21:20)
-        let tuesday_morning = monday.succ_opt().unwrap().and_hms_opt(8, 0, 0).unwrap();
+        let tuesday_morning = monday
+            .succ_opt()
+            .ok_or(anyhow::anyhow!("Monday should have a next day"))?
+            .and_hms_opt(8, 0, 0)
+            .ok_or(anyhow::anyhow!("Tuesday should have a valid time"))?;
         let tuesday_morning_utc = Utc.from_utc_datetime(&tuesday_morning);
 
         let next_time_from_tuesday_morning = next_draw_time(Some(tuesday_morning_utc)).await?;
-        log::debug!(
-            "Next draw time from Tuesday morning: {}",
-            next_time_from_tuesday_morning
-        );
+        log::debug!("Next draw time from Tuesday morning: {next_time_from_tuesday_morning}",);
 
         // 应该是同一天的21:20北京时间
         assert_eq!(next_time_from_tuesday_morning, expected_tuesday_utc);
 
         // 测试周二后 (应该返回周四21:20)
-        let tuesday_night = monday.succ_opt().unwrap().and_hms_opt(22, 0, 0).unwrap();
+        let tuesday_night = monday
+            .succ_opt()
+            .ok_or(anyhow::anyhow!("Monday should have a next day"))?
+            .and_hms_opt(22, 0, 0)
+            .ok_or(anyhow::anyhow!("Tuesday should have a valid time"))?;
         let tuesday_night_utc = Utc.from_utc_datetime(&tuesday_night);
 
         let next_time_from_tuesday_night = next_draw_time(Some(tuesday_night_utc)).await?;
-        log::debug!(
-            "Next draw time from Tuesday night: {}",
-            next_time_from_tuesday_night
-        );
+        log::debug!("Next draw time from Tuesday night: {next_time_from_tuesday_night}");
 
         // 应该是周四北京时间21:20 (UTC时间13:20)
         let expected_thursday = monday
             .succ_opt()
-            .unwrap()
+            .ok_or(anyhow::anyhow!("Monday should have a next day"))?
             .succ_opt()
-            .unwrap()
+            .ok_or(anyhow::anyhow!("Tuesday should have a next day"))?
             .succ_opt()
-            .unwrap()
+            .ok_or(anyhow::anyhow!("Wednesday should have a next day"))?
             .and_hms_opt(13, 20, 0)
-            .unwrap();
+            .ok_or(anyhow::anyhow!("Thursday should have a valid time"))?;
         let expected_thursday_utc = Utc.from_utc_datetime(&expected_thursday);
         assert_eq!(next_time_from_tuesday_night, expected_thursday_utc);
 
         // 测试周五 (应该返回周日21:20)
-        let friday = NaiveDate::from_ymd_opt(2024, 1, 5).unwrap(); // 2024-01-05是周五
-        let friday_afternoon = friday.and_hms_opt(15, 0, 0).unwrap();
+        let friday = NaiveDate::from_ymd_opt(2024, 1, 5).expect("Date should be valid"); // 2024-01-05是周五
+        let friday_afternoon = friday.and_hms_opt(15, 0, 0).expect("Time should be valid");
         let friday_utc = Utc.from_utc_datetime(&friday_afternoon);
 
         let next_time_from_friday = next_draw_time(Some(friday_utc)).await?;
-        log::debug!("Next draw time from Friday: {}", next_time_from_friday);
+        log::debug!("Next draw time from Friday: {next_time_from_friday}");
 
         // 应该是周日北京时间21:20 (UTC时间13:20)
         let expected_sunday = friday
             .succ_opt()
-            .unwrap()
+            .expect("Friday should have a next day")
             .succ_opt()
-            .unwrap()
+            .expect("Friday should have a next next day")
             .and_hms_opt(13, 20, 0)
-            .unwrap();
+            .expect("Time should be valid");
         let expected_sunday_utc = Utc.from_utc_datetime(&expected_sunday);
         assert_eq!(next_time_from_friday, expected_sunday_utc);
 

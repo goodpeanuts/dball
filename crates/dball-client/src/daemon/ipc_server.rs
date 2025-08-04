@@ -408,8 +408,8 @@ mod tests {
     #[tokio::test]
     async fn test_ipc_server_creation() {
         let initial_state = AppState {
-            current_period: "test".to_string(),
-            next_period: "test".to_string(),
+            current_period: "test".to_owned(),
+            next_period: "test".to_owned(),
             last_draw_time: None,
             next_draw_time: None,
             latest_ticket: None,
@@ -418,7 +418,7 @@ mod tests {
             total_investment: 0.0,
             total_return: 0.0,
             api_status: crate::ipc::protocol::ApiStatusInfo {
-                api_provider: "test".to_string(),
+                api_provider: "test".to_owned(),
                 last_success: None,
                 success_rate: 0.0,
                 average_response_time: Duration::from_millis(1000),

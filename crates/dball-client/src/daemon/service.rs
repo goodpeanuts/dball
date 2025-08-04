@@ -276,8 +276,8 @@ mod tests {
     async fn test_state_subscription() {
         // 创建一个基本的状态用于测试
         let initial_state = AppState {
-            current_period: "test".to_string(),
-            next_period: "test".to_string(),
+            current_period: "test".to_owned(),
+            next_period: "test".to_owned(),
             last_draw_time: None,
             next_draw_time: None,
             latest_ticket: None,
@@ -286,7 +286,7 @@ mod tests {
             total_investment: 0.0,
             total_return: 0.0,
             api_status: crate::ipc::protocol::ApiStatusInfo {
-                api_provider: "test".to_string(),
+                api_provider: "test".to_owned(),
                 last_success: None,
                 success_rate: 0.0,
                 average_response_time: Duration::from_millis(1000),
@@ -301,10 +301,12 @@ mod tests {
         let (broadcaster, mut receiver) = broadcast::channel(10);
 
         // 发送状态
-        broadcaster.send(initial_state.clone()).unwrap();
+        broadcaster
+            .send(initial_state.clone())
+            .expect("Failed to send initial state");
 
         // 接收状态
-        let received_state = receiver.recv().await.unwrap();
+        let received_state = receiver.recv().await.expect("Failed to receive state");
         assert_eq!(received_state.current_period, "test");
     }
 }

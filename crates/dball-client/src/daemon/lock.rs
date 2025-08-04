@@ -152,7 +152,9 @@ mod tests {
         let test_lock_path = "/tmp/dball-daemon-test.lock";
 
         // 确保测试开始前没有锁文件
-        let _ = std::fs::remove_file(test_lock_path);
+        if std::fs::remove_file(test_lock_path).is_err() {
+            log::warn!("No existing lock file to remove");
+        }
 
         // 这个测试需要修改InstanceLock来支持自定义路径
         // 目前先跳过实际的锁测试

@@ -175,13 +175,16 @@ pub async fn deprecated_last_batch_unprized_spot() -> anyhow::Result<usize> {
 
 pub async fn get_prized_spots() -> anyhow::Result<Vec<Spot>> {
     use crate::db::spot;
-    let prized_spots = spot::get_all_spots()?
+    let mut prized_spots = spot::get_all_spots()?
         .into_iter()
         .filter_map(|s| match s.prize_status {
             Some(_) => Some(s), // All spots with prize status including deprecated
             _ => None,
         })
         .collect::<Vec<Spot>>();
+
+    prized_spots.sort_by_key(|s| s.period.clone());
+    prized_spots.reverse(); // Sort by period in descending order
 
     Ok(prized_spots)
 }

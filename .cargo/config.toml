@@ -26,3 +26,6 @@ pt = "run -F terminal"
 
 # run all test with next-test
 nt = "nextest run --all-targets --all-features --test-threads=1"
+
+# update this year tickets
+uyt = "run -p dball-client --example this_year_tickets"

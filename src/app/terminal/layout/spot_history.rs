@@ -6,6 +6,12 @@ use crate::terminal::{
     ipc::{RpcResult, send_rpc_request},
 };
 
+#[derive(Default, Props)]
+pub struct SpotHistoryProps {
+    pub focused: bool,
+    pub list_height: u16,
+}
+
 #[derive(Clone)]
 enum HistoryState {
     Init,
@@ -14,8 +20,13 @@ enum HistoryState {
 }
 
 #[component]
-pub fn SpotHistoryLayout(mut hooks: Hooks<'_, '_>) -> impl Into<AnyElement<'static>> {
+pub fn SpotHistoryLayout(
+    mut hooks: Hooks<'_, '_>,
+    props: &SpotHistoryProps,
+) -> impl Into<AnyElement<'static>> {
     let mut state = hooks.use_state(|| HistoryState::Init);
+    let scroll_offset = hooks.use_state(|| 0usize);
+    let list_height = props.list_height.max(1) as usize;
 
     // Load prized spots data handler
     let mut load_prized_spots = hooks.use_async_handler(move |_: ()| async move {
@@ -70,9 +81,23 @@ pub fn SpotHistoryLayout(mut hooks: Hooks<'_, '_>) -> impl Into<AnyElement<'stat
 
     // Handle terminal events
     hooks.use_terminal_events({
+        let focused = props.focused;
+        let max_offset = match &*state.read() {
+            HistoryState::Loaded(Ok(spots)) => spots.len().saturating_sub(list_height),
+            HistoryState::Loaded(Err(_)) | HistoryState::Loading | HistoryState::Init => 0,
+        };
+        let mut scroll_offset = scroll_offset;
         move |event| match event {
             TerminalEvent::Key(KeyEvent { code, kind, .. }) if kind != KeyEventKind::Release => {
                 match code {
+                    KeyCode::Up if focused => {
+                        let next = scroll_offset.get().saturating_sub(1);
+                        scroll_offset.set(next.min(max_offset));
+                    }
+                    KeyCode::Down if focused => {
+                        let next = scroll_offset.get().saturating_add(1);
+                        scroll_offset.set(next.min(max_offset));
+                    }
                     // Press U to update all unprize spots
                     KeyCode::Char('u' | 'U') => {
                         update_spots(());
@@ -88,6 +113,8 @@ pub fn SpotHistoryLayout(mut hooks: Hooks<'_, '_>) -> impl Into<AnyElement<'stat
         }
     });
 
+    let header_suffix = if props.focused { " [FOCUS]" } else { "" };
+
     let content_elements = match &*state.read() {
         HistoryState::Loaded(Ok(spots)) => {
             if spots.is_empty() {
@@ -98,8 +125,12 @@ pub fn SpotHistoryLayout(mut hooks: Hooks<'_, '_>) -> impl Into<AnyElement<'stat
                     .into(),
                 ]
             } else {
+                let max_offset = spots.len().saturating_sub(list_height);
+                let offset = scroll_offset.get().min(max_offset);
                 spots
                     .iter()
+                    .skip(offset)
+                    .take(list_height)
                     .map(|spot| {
                         element! {
                             SpotComponent(value: spot.clone(), has_focus: false)
@@ -140,8 +171,15 @@ pub fn SpotHistoryLayout(mut hooks: Hooks<'_, '_>) -> impl Into<AnyElement<'stat
             flex_grow: 1.0,
             flex_direction: FlexDirection::Column,
         ) {
-            Text(content: "Spot History", color: Color::Cyan, weight: Weight::Bold)
-            Text(content: "Press U to update all unprize spots\nPress R to refresh", color: Color::Yellow)
+            Text(
+                content: format!("Spot History{header_suffix}"),
+                color: if props.focused { Color::Cyan } else { Color::White },
+                weight: Weight::Bold,
+            )
+            Text(
+                content: "Press U to update all unprize spots\nPress R to refresh",
+                color: Color::Yellow,
+            )
             View(
                 margin_top: 1,
                 flex_direction: FlexDirection::Column,

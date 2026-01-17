@@ -50,13 +50,7 @@ pub fn SpotComponent(_hooks: Hooks<'_, '_>, props: &SpotProps) -> impl Into<AnyE
 
     let multiplier_str = format!("×{}", spot.magnification);
 
-    // TODO: display specific status
-    let (status_text, status_color) = match spot.prize_status {
-        Some(0) => ("non-prize", Color::White),
-        None => ("pending", Color::Yellow),
-        Some(_) if !spot.deprecated => ("pity", Color::Blue),
-        Some(_) => ("deprecated", Color::Green),
-    };
+    let (status_text, status_color) = spot_status(spot);
 
     element! {
         View(
@@ -72,6 +66,18 @@ pub fn SpotComponent(_hooks: Hooks<'_, '_>, props: &SpotProps) -> impl Into<AnyE
             Text(content: multiplier_str, color: Color::Yellow)
             Text(content: " - ", color: Color::White)
             Text(content: status_text, color: status_color, weight: Weight::Bold)
+        }
+    }
+}
+
+pub(crate) fn spot_status(spot: &Spot) -> (&'static str, Color) {
+    if spot.deprecated {
+        ("deprecated", Color::Green)
+    } else {
+        match spot.prize_status {
+            None => ("pending", Color::Yellow),
+            Some(0) => ("non-prize", Color::White),
+            Some(_) => ("prize", Color::Blue),
         }
     }
 }

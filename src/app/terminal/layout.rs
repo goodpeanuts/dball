@@ -8,12 +8,25 @@ mod spot_history;
 
 pub(crate) use logs::init_logger;
 
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum FocusPanel {
+    SpotHistory,
+    Logs,
+}
+
 /// Main layout component
 #[component]
 pub fn MainLayout(mut hooks: Hooks<'_, '_>) -> impl Into<AnyElement<'static>> {
     const LEFT_WIDTH: u16 = 52;
+    const BORDER_LINES: u16 = 2;
+    const PANEL_PADDING: u16 = 2;
+    const SPOT_HISTORY_HEADER_LINES: u16 = 2;
+    const SPOT_HISTORY_MARGIN_LINES: u16 = 1;
+    const LOGS_HEADER_LINES: u16 = 1;
+    const LOGS_MARGIN_LINES: u16 = 1;
 
     let (width, height) = hooks.use_terminal_size();
+    let focused_panel = hooks.use_state(|| FocusPanel::SpotHistory);
 
     // Ensure enough space for display, reserve 1 line each for top and bottom
     let usable_height = height.saturating_sub(2);
@@ -30,6 +43,29 @@ pub fn MainLayout(mut hooks: Hooks<'_, '_>) -> impl Into<AnyElement<'static>> {
     // Center column ratio: 70% top, 30% bottom (adjusted ratio to avoid being too tall)
     let center_top_height = (usable_height * 70) / 100;
     let center_bottom_height = usable_height - center_top_height;
+
+    let spot_history_list_height = left_bottom_height.saturating_sub(
+        BORDER_LINES + PANEL_PADDING + SPOT_HISTORY_HEADER_LINES + SPOT_HISTORY_MARGIN_LINES,
+    );
+    let logs_list_height = usable_height
+        .saturating_sub(BORDER_LINES + PANEL_PADDING + LOGS_HEADER_LINES + LOGS_MARGIN_LINES);
+
+    let spot_history_focused = *focused_panel.read() == FocusPanel::SpotHistory;
+    let logs_focused = *focused_panel.read() == FocusPanel::Logs;
+
+    hooks.use_terminal_events({
+        let mut focused_panel = focused_panel;
+        move |event| match event {
+            TerminalEvent::Key(KeyEvent { code, kind, .. }) if kind != KeyEventKind::Release => {
+                match code {
+                    KeyCode::Left => focused_panel.set(FocusPanel::SpotHistory),
+                    KeyCode::Right => focused_panel.set(FocusPanel::Logs),
+                    _ => {}
+                }
+            }
+            _ => {}
+        }
+    });
 
     element! {
         View(
@@ -62,11 +98,14 @@ pub fn MainLayout(mut hooks: Hooks<'_, '_>) -> impl Into<AnyElement<'static>> {
                 View(
                     height: left_bottom_height,
                     border_style: BorderStyle::Round,
-                    border_color: Color::Green,
+                    border_color: if spot_history_focused { Color::Cyan } else { Color::Green },
                     background_color: Color::Black,
                     padding: 1,
                 ) {
-                    spot_history::SpotHistoryLayout()
+                    spot_history::SpotHistoryLayout(
+                        focused: spot_history_focused,
+                        list_height: spot_history_list_height,
+                    )
                 }
             }
 
@@ -106,12 +145,15 @@ pub fn MainLayout(mut hooks: Hooks<'_, '_>) -> impl Into<AnyElement<'static>> {
                 width: right_width,
                 height: usable_height,
                 border_style: BorderStyle::Round,
-                border_color: Color::White,
+                border_color: if logs_focused { Color::Cyan } else { Color::White },
                 background_color: Color::Black,
                 flex_direction: FlexDirection::Column,
                 padding: 1,
             ) {
-                logs::LogsLayout()
+                logs::LogsLayout(
+                    focused: logs_focused,
+                    list_height: logs_list_height,
+                )
             }
         }
     }

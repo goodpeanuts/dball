@@ -3,13 +3,14 @@
     "rust-analyzer.restartServerOnConfigChange": true,
     "rust-analyzer.runnables.extraEnv": {"PATH": "${env:HOME}/.cargo/bin:${env:PATH}"},
 
-    // "rust-analyzer.cargo.features": ["terminal"],
+    "rust-analyzer.cargo.features": ["terminal"],
+    "rust-analyzer.check.features": ["terminal"],
     // "rust-analyzer.cargo.target": "wasm32-unknown-unknown",
     "rust-analyzer.check.targets": [
-        "aarch64-apple-darwin",
+        // "aarch64-apple-darwin",
         // "wasm32-unknown-unknown",
         // "x86_64-pc-windows-msvc",
-        // "x86_64-unknown-linux-gnu"
+        "x86_64-unknown-linux-gnu"
     ],
 
 }

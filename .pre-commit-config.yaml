@@ -26,13 +26,13 @@ repos:
         files: \.rs$
         args: []
 
-      - id: cargo-deny
-        name: cargo deny check
-        description: Check cargo dependencies
-        entry: bash -c 'cargo deny check -d'
-        language: rust
-        files: \.rs$
-        args: []
+      # - id: cargo-deny
+      #   name: cargo deny check
+      #   description: Check cargo dependencies
+      #   entry: bash -c 'cargo deny check -d'
+      #   language: rust
+      #   files: \.rs$
+      #   args: []
 
       - id: typos
         name: typos
@@ -61,7 +61,7 @@ repos:
       - id: cargo-test
         name: cargo test
         description: unit test for the project
-        entry: bash -c 'cargo nextest run --all-features'
+        entry: bash -c 'cargo nextest run --all-targets --all-features --test-threads=1'
         language: rust
         files: \.rs$
         pass_filenames: false

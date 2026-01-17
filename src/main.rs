@@ -30,9 +30,14 @@ async fn main() -> anyhow::Result<()> {
     use dball::terminal::DballApp;
     use dball_client::ipc::client::IpcClient;
     use iocraft::prelude::*;
+    use std::io::IsTerminal as _;
     IpcClient::new().connect().await?;
 
-    element!(DballApp).render_loop().await?;
+    if std::io::stdout().is_terminal() {
+        element!(DballApp).fullscreen().await?;
+    } else {
+        element!(DballApp).render_loop().await?;
+    }
     Ok(())
 }
 

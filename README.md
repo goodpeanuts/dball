@@ -13,6 +13,11 @@
 cargo install --locked cargo-deny && cargo deny init && cargo deny check
 ```
 
+**todo:**
+
+If you already have cargo-deny installed, update it to the latest version so it can parse
+CVSS 4.0 advisories from the RustSec database.
+
 ### [Pre-commit](https://pre-commit.com/#usage)
 
 It is a multi-language package manager for pre-commit hooks. You specify a list of hooks you want and pre-commit manages the installation and execution of any hook written in any language before every commit. pre-commit is specifically designed to not require root access. If one of your developers doesn’t have node installed but modifies a JavaScript file, pre-commit automatically handles downloading and building node to run eslint without root.
@@ -32,7 +37,7 @@ pre-commit install
 Typos is a spell checker for source code.
 
 ```bash
-cargo install typos-cli
+cargo install --locked typos-cli --version 1.39.0
 ```
 
 ### [cargo-llvm-cov](https://github.com/taiki-e/cargo-llvm-cov)
@@ -59,7 +64,7 @@ cargo install git-cliff
 Nextest is a boosted test runner for Rust.
 
 ```bash
-cargo nextest
+cargo install --locked cargo-nextest --version 0.9.100
 ```
 
 

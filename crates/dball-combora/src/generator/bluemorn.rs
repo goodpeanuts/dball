@@ -18,19 +18,21 @@ impl RandomGenerator for BlueMorn {
         });
 
         #[expect(clippy::match_same_arms)]
-        checks.iter().for_each(|e| match e {
-            DBallChecker::AllSingleDigits => score *= 0.1004,
-            DBallChecker::AllEvenOrOdd => score *= 0.2003,
-            DBallChecker::RedConflictsWithBlue => score *= 0.0921,
-            DBallChecker::SumExtreme => score *= 0.1027,
-            DBallChecker::RangeExtreme => score *= 0.3544,
-            DBallChecker::BatchRBallSumExtreme => score *= 0.3544,
-            DBallChecker::BatchHasDuplicateCombinations => score *= 0.0321,
-            DBallChecker::BatchTopRedNumberFrequencies => score *= 0.0321,
-            DBallChecker::BatchBlueBallDistribution => score *= 0.0921,
-            DBallChecker::BatchBlueBallDuplicate => score *= 0.0321,
-            DBallChecker::BatchHighCosineSimilarity => score *= 0.0830,
-        });
+        for e in &checks {
+            match e {
+                DBallChecker::AllSingleDigits => score *= 0.1004,
+                DBallChecker::AllEvenOrOdd => score *= 0.2003,
+                DBallChecker::RedConflictsWithBlue => score *= 0.0921,
+                DBallChecker::SumExtreme => score *= 0.1027,
+                DBallChecker::RangeExtreme => score *= 0.3544,
+                DBallChecker::BatchRBallSumExtreme => score *= 0.3544,
+                DBallChecker::BatchHasDuplicateCombinations => score *= 0.0321,
+                DBallChecker::BatchTopRedNumberFrequencies => score *= 0.0321,
+                DBallChecker::BatchBlueBallDistribution => score *= 0.0921,
+                DBallChecker::BatchBlueBallDuplicate => score *= 0.0321,
+                DBallChecker::BatchHighCosineSimilarity => score *= 0.0830,
+            }
+        }
         score
     }
 }

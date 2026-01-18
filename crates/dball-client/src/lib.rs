@@ -9,6 +9,7 @@ pub mod daemon;
 pub mod db;
 pub mod ipc;
 pub mod models;
+pub mod server;
 pub mod service;
 
 const NEVER_NONE_BY_DATABASE: &str = "Should not be None guaranteed by database";

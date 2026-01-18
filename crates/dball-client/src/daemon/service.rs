@@ -4,6 +4,7 @@ use tokio::sync::{RwLock, broadcast};
 
 use super::{InstanceLock, IpcServer};
 use crate::ipc::protocol::AppState;
+use crate::server::HttpServer;
 
 /// daemon process main service
 ///
@@ -15,6 +16,8 @@ pub struct DaemonService {
     state_broadcaster: broadcast::Sender<AppState>,
     /// IPC server
     ipc_server: Option<IpcServer>,
+    /// HTTP server
+    http_server: Option<HttpServer>,
     /// instance lock
     _instance_lock: InstanceLock,
     /// service running flag
@@ -34,6 +37,7 @@ impl DaemonService {
             state,
             state_broadcaster,
             ipc_server: None,
+            http_server: None,
             _instance_lock: instance_lock,
             running: Arc::new(RwLock::new(false)),
         };
@@ -56,6 +60,7 @@ impl DaemonService {
         let ipc_server = IpcServer::new(self.state.clone(), self.state_broadcaster.clone()).await?;
 
         self.ipc_server = Some(ipc_server);
+        self.http_server = Some(HttpServer::new(self.state.clone()));
 
         log::info!("Daemon service started successfully");
         Ok(())
@@ -75,17 +80,25 @@ impl DaemonService {
             }
         });
 
-        // start IPC server
+        // start IPC + HTTP servers
         if let Some(ref ipc_server) = self.ipc_server {
-            let server_handle = ipc_server.start().await?;
+            let ipc_handle = ipc_server.start().await?;
+            let http_handle = if let Some(ref http_server) = self.http_server {
+                Some(http_server.start().await?)
+            } else {
+                None
+            };
 
             // wait until stop signal
             while *running.read().await {
                 tokio::time::sleep(tokio::time::Duration::from_millis(100)).await;
             }
 
-            // stop IPC server
-            server_handle.abort();
+            // stop servers
+            if let Some(handle) = http_handle {
+                handle.abort();
+            }
+            ipc_handle.abort();
         }
 
         log::info!("Daemon service stopped");

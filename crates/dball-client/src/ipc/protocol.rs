@@ -1,10 +1,11 @@
 use chrono::{DateTime, Utc};
 use dball_combora::dball::DBall;
+use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 use std::time::Duration;
 
 /// Rpc service definition
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone, JsonSchema)]
 pub enum RpcService {
     GenerateBatchSpots,
 

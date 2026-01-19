@@ -1,0 +1,11 @@
+version: "3.8"
+
+services:
+  nocodb:
+    image: nocodb/nocodb:latest
+    container_name: dball-nocodb
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./database:/usr/app/data/dball
+    restart: unless-stopped

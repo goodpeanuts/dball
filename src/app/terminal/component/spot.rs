@@ -70,14 +70,28 @@ pub fn SpotComponent(_hooks: Hooks<'_, '_>, props: &SpotProps) -> impl Into<AnyE
     }
 }
 
-pub(crate) fn spot_status(spot: &Spot) -> (&'static str, Color) {
-    if spot.deprecated {
-        ("deprecated", Color::Green)
-    } else {
-        match spot.prize_status {
-            None => ("pending", Color::Yellow),
-            Some(0) => ("non-prize", Color::White),
-            Some(_) => ("prize", Color::Blue),
+pub(crate) fn spot_status(spot: &Spot) -> (String, Color) {
+    if let Some(prize_status) = spot.prize_status {
+        if prize_status > 0 {
+            (
+                format!("hit#{prize_status}"),
+                if spot.deprecated {
+                    Color::DarkMagenta
+                } else {
+                    Color::Red
+                },
+            )
+        } else {
+            (
+                "non-prize".to_owned(),
+                if spot.deprecated {
+                    Color::White
+                } else {
+                    Color::Cyan
+                },
+            )
         }
+    } else {
+        ("pending".to_owned(), Color::Yellow)
     }
 }

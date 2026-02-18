@@ -17,7 +17,6 @@
           buildInputs = [
             # Rust
             rust-bin.stable.latest.default
-            trunk
 
             # misc. libraries
             openssl

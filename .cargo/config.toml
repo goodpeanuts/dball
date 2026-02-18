@@ -1,31 +1,40 @@
 [alias]
-# test aliases for dball-client
+# NOTE:
+# These aliases provide a fast/consistent local workflow.
+# Usage pattern: `cargo <alias> [extra args]`.
+
+# Run dball-client tests with full output and single-thread execution.
+# Useful for debugging flaky DB/integration-style tests.
 tpc = "test -p dball-client -- --nocapture --test-threads=1"
 
-# test aliases for dball-client quite
+# Run dball-client tests quietly with single-thread execution.
+# Use this for routine regression checks with deterministic ordering.
 tpcq = "test -p dball-client -- --test-threads=1"
 
-# test aliases for dball-client clean test env
+# Run only the ignored `clean_test_env` test to reset test environment state.
 ctenv = "test -p dball-client -- --test clean_test_env --nocapture --ignored"
 
-# cargo clippy --all  && cargo check --all && cargo fmt --all
-
+# Apply clippy autofixes across current working tree.
+# Equivalent intent: quickly fix lint issues before manual review.
 cfaa = "clippy --fix --allow-dirty --allow-staged"
 
-# cargo run -p dball-client --example
+# Run an example from dball-client.
+# Example: `cargo pce crawl_tickets`
 pce = "run -p dball-client --example"
 
-# cargo run -p dball-combora --example
+# Run an example from dball-combora.
+# Example: `cargo poe main`
 poe = "run -p dball-combora --example"
 
-# run daemon
+# Run the daemon binary from dball-client.
 pd = "run -p dball-client --bin daemon"
 
-# run tui
+# Run terminal UI mode for the root crate.
 pt = "run -F terminal"
 
-# run all test with next-test
+# Run full workspace tests with cargo-nextest in single-thread mode.
+# Useful for broad validation with clearer progress reporting.
 nt = "nextest run --all-targets --all-features --test-threads=1"
 
-# update this year tickets
+# Run the helper example that updates current-year ticket data.
 uyt = "run -p dball-client --example this_year_tickets"

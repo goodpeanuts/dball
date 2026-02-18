@@ -3,14 +3,12 @@
 set -eux
 
 cargo check --quiet --workspace --all-targets
-cargo check --quiet --workspace --lib --target wasm32-unknown-unknown --exclude dball-client
 cargo fmt --all -- --check
 cargo clippy --quiet --workspace --all-targets --all-features --  -D warnings -W clippy::all
 
-trunk build
-
+# TODO(2026-02-18): re-enable after upgrading Rust toolchain/cargo-deny
 # cargo install --locked cargo-deny
-cargo deny check -d
+# cargo deny check -d
 # cargo install typos-cli
 typos
 

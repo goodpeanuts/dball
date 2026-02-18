@@ -3,15 +3,16 @@
 ## Project Structure & Module Organization
 - `src/` holds the eframe app entry points (`main.rs`, `lib.rs`, `app/`, `app.rs`) and benches (`src/bench.rs`); `benches/` contains Criterion benchmarks.
 - `crates/` hosts workspace members like `dball-client` and `dball-combora`.
-- `assets/` and `index.html` support the WASM build; `assets/sw.js` controls caching behavior.
-- `migrations/` and `database/` contain Diesel assets; `api/` holds API-related config; `Trunk.toml` configures web builds.
+- `assets/` stores application icons and static resources used by the native GUI.
+- `migrations/` and `database/` contain Diesel assets; `api/` holds API-related config.
 - `migrations`, `database`, and `api_invalid.toml` are useful references when touching persistence or API shape.
 
 ## Build, Test, and Development Commands
 - Native app: `cargo run --release`.
-- Web dev: `trunk serve` (after `rustup target add wasm32-unknown-unknown`) builds and serves at `http://127.0.0.1:8080`.
-- Web release: `trunk build --release` outputs `dist/`.
-- CI-like suite: `./check.sh` runs cargo checks (including wasm), `cargo fmt`, `cargo clippy -D warnings`, Trunk build, cargo-deny, typos, and full tests.
+- Prefer test/run aliases defined in `.cargo/config.toml` (e.g. `cargo tpc`, `cargo tpcq`, `cargo ctenv`, `cargo nt`) for consistent local workflows.
+- CI-like suite: `./check.sh` runs cargo checks, `cargo fmt`, `cargo clippy -D warnings`, typos, and full tests.
+- `cargo deny check -d` is temporarily disabled in `check.sh`; re-enable after Rust toolchain/cargo-deny upgrade (tracked in `subm/xxdoc/TODO.md`).
+- After each code change, run `./check.sh` for quick regression coverage before handing off.
 - Quick tests: `cargo test --workspace --all-targets --all-features`; doc tests via `cargo test --workspace --doc`; optional speedup with `cargo nextest`.
 
 ## Coding Style & Naming Conventions
@@ -27,8 +28,5 @@
 ## Commit & Pull Request Guidelines
 - Use Conventional Commits (see `cliff.toml`), e.g., `feat(ui): add scoreboard` or `fix(api): handle null token`.
 - Keep PRs focused; include a short description, linked issues, and noteworthy decisions.
+- Keep git hooks enabled with `pre-commit install`; before any `git add/commit/push`, run `pre-commit run --all-files` for quality gates.
 - Attach test results (`./check.sh` or relevant subset). Include screenshots/GIFs for UI changes when feasible.
-
-## Web & Caching Tips
-- During web dev, open `http://127.0.0.1:8080/index.html#dev` to bypass service-worker caching from `assets/sw.js`.
-- When shipping new assets, ensure `assets/sw.js` caches the correct `{crate}_bg.wasm` and JS bundle names if they change.

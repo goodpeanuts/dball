@@ -18,7 +18,7 @@ fn get_valid_protocols() -> Vec<String> {
     Protocol::iter().map(|p| p.to_string()).collect()
 }
 
-/// Get all valid provider names for error reporting  
+/// Get all valid provider names for error reporting
 fn get_valid_providers() -> Vec<&'static str> {
     ApiProvider::iter().map(|p| p.id()).collect()
 }

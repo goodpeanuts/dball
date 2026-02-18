@@ -4,7 +4,7 @@
 -- Create new table with datetime field
 CREATE TABLE tickets_new (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    period TEXT NOT NULL,                
+    period TEXT NOT NULL,
     time DATETIME NOT NULL,              -- Changed from TEXT to DATETIME
     red1 INTEGER NOT NULL,
     red2 INTEGER NOT NULL,

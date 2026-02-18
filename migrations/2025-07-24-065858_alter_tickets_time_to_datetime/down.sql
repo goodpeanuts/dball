@@ -4,7 +4,7 @@
 -- Create table with TEXT time field (original structure)
 CREATE TABLE tickets_new (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
-    period TEXT NOT NULL,                
+    period TEXT NOT NULL,
     time TEXT NOT NULL,                  -- Reverted back to TEXT
     red1 INTEGER NOT NULL,
     red2 INTEGER NOT NULL,

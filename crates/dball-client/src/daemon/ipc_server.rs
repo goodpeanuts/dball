@@ -391,10 +391,10 @@ impl Drop for IpcServer {
     fn drop(&mut self) {
         // Cleanup socket file on Unix systems
         #[cfg(unix)]
-        if Path::new(&self.socket_path).exists() {
-            if let Err(e) = std::fs::remove_file(&self.socket_path) {
-                log::error!("Failed to cleanup socket file: {e}");
-            }
+        if Path::new(&self.socket_path).exists()
+            && let Err(e) = std::fs::remove_file(&self.socket_path)
+        {
+            log::error!("Failed to cleanup socket file: {e}");
         }
     }
 }

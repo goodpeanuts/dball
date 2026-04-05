@@ -160,11 +160,7 @@ impl QpsLimitedExecutor {
                 // Calculate minimum interval between requests (1 second / QPS)
                 let min_interval = Duration::from_secs_f64(1.0 / qps as f64);
 
-                if elapsed < min_interval {
-                    min_interval - elapsed
-                } else {
-                    Duration::ZERO
-                }
+                min_interval.saturating_sub(elapsed)
             }
         };
 

@@ -2,14 +2,15 @@ use dball_combora::dball::DBall;
 use iocraft::prelude::*;
 
 #[derive(Props)]
+#[expect(dead_code, reason = "reserved for future terminal UI composition")]
 pub struct DBallProps {
     pub value: DBall,
-    #[expect(unused)]
     pub has_focus: bool,
 }
 
 #[component]
 pub fn DBallComponent(_hooks: Hooks<'_, '_>, props: &DBallProps) -> impl Into<AnyElement<'static>> {
+    let _: bool = props.has_focus;
     let dball = &props.value;
 
     let red_balls_str = dball

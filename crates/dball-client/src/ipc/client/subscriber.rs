@@ -51,7 +51,6 @@ impl StateSubscriber {
         tokio::spawn(async move {
             let mut last_update: Option<AppState> = None;
 
-            #[expect(clippy::infinite_loop)]
             loop {
                 // check if the client state has been updated
                 let client_app_state = client_state.read().await.clone();
@@ -115,19 +114,19 @@ impl StateSubscriber {
     {
         loop {
             // check if the current state satisfies the condition
-            if let Some(current) = self.get_current_state().await {
-                if condition(&current) {
-                    return Ok(current);
-                }
+            if let Some(current) = self.get_current_state().await
+                && condition(&current)
+            {
+                return Ok(current);
             }
 
             // wait for the next change
             self.state_receiver.changed().await?;
 
-            if let Some(new_state) = &*self.state_receiver.borrow() {
-                if condition(new_state) {
-                    return Ok(new_state.clone());
-                }
+            if let Some(new_state) = &*self.state_receiver.borrow()
+                && condition(new_state)
+            {
+                return Ok(new_state.clone());
             }
         }
     }
@@ -369,10 +368,10 @@ mod tests {
                     .changed()
                     .await
                     .expect("Failed to wait for condition");
-                if let Some(state) = &*receiver.borrow() {
-                    if state.current_period == "target" {
-                        return state.clone();
-                    }
+                if let Some(state) = &*receiver.borrow()
+                    && state.current_period == "target"
+                {
+                    return state.clone();
                 }
             }
         })

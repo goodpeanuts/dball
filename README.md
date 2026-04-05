@@ -10,13 +10,8 @@
 ### [Cargo deny](https://embarkstudios.github.io/cargo-deny/index.html)
 
 ```bash
-cargo install --locked cargo-deny --version 0.18.3 && cargo deny init && cargo deny check
+cargo install --locked cargo-deny --version 0.19.0 && cargo deny init && cargo deny check
 ```
-
-**todo:**
-
-If you already have cargo-deny installed, update it to the latest version so it can parse
-CVSS 4.0 advisories from the RustSec database.
 
 ### [Pre-commit](https://pre-commit.com/#usage)
 
@@ -37,7 +32,7 @@ pre-commit install
 Typos is a spell checker for source code.
 
 ```bash
-cargo install --locked typos-cli --version 1.39.0
+cargo install --locked typos-cli --version 1.43.5
 ```
 
 ### [cargo-llvm-cov](https://github.com/taiki-e/cargo-llvm-cov)
@@ -45,7 +40,7 @@ cargo install --locked typos-cli --version 1.39.0
 cargo-llvm-cov is a code coverage tool for Rust using LLVM.
 
 ```bash
-cargo install cargo-llvm-cov
+cargo install --locked cargo-llvm-cov --version 0.8.4
 cargo llvm-cov --all-features --all-targets --workspace --html
 cargo llvm-cov --open
 ```
@@ -55,7 +50,7 @@ cargo llvm-cov --open
 Git cliff is used to generate changelogs from commit messages.
 
 ```bash
-cargo install --locked git-cliff
+cargo install --locked git-cliff --version 2.12.0
 ```
 
 
@@ -64,7 +59,7 @@ cargo install --locked git-cliff
 Nextest is a boosted test runner for Rust.
 
 ```bash
-cargo install --locked cargo-nextest --version 0.9.100
+cargo install --locked cargo-nextest --version 0.9.127
 ```
 
 

@@ -59,10 +59,10 @@ impl ReconnectManager {
         loop {
             attempt += 1;
 
-            if let Some(max) = self.max_attempts {
-                if attempt > max {
-                    return Err(anyhow::anyhow!("Max reconnect attempts ({}) exceeded", max));
-                }
+            if let Some(max) = self.max_attempts
+                && attempt > max
+            {
+                return Err(anyhow::anyhow!("Max reconnect attempts ({}) exceeded", max));
             }
 
             log::info!("Reconnect attempt #{attempt}");

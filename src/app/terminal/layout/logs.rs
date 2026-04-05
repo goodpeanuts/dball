@@ -54,8 +54,11 @@ pub fn LogPanel(mut hooks: Hooks<'_, '_>, props: &LogPanelProps) -> impl Into<An
     const MAX_LOGS_CACHE: usize = 500;
     let list_height = props.list_height.max(1) as usize;
     let scroll_from_bottom = hooks.use_state(|| 0usize);
-    #[expect(clippy::unchecked_duration_subtraction)]
-    let last_scroll_at = hooks.use_state(|| Instant::now() - Duration::from_secs(1));
+    let last_scroll_at = hooks.use_state(|| {
+        Instant::now()
+            .checked_sub(Duration::from_secs(1))
+            .unwrap_or_else(Instant::now)
+    });
     let mut focused_state = hooks.use_state(|| props.focused);
 
     if focused_state.get() != props.focused {
@@ -66,7 +69,6 @@ pub fn LogPanel(mut hooks: Hooks<'_, '_>, props: &LogPanelProps) -> impl Into<An
     let scroll_from_bottom_for_future = scroll_from_bottom;
     let focused_state_for_future = focused_state;
     hooks.use_future(async move {
-        #[expect(clippy::infinite_loop)]
         loop {
             tokio::time::sleep(tokio::time::Duration::from_millis(500)).await;
 

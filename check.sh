@@ -6,9 +6,10 @@ cargo check --quiet --workspace --all-targets
 cargo fmt --all -- --check
 cargo clippy --quiet --workspace --all-targets --all-features --  -D warnings -W clippy::all
 
-# TODO(2026-02-18): re-enable after upgrading Rust toolchain/cargo-deny
-# cargo install --locked cargo-deny
-# cargo deny check -d
+# cargo install --locked cargo-deny --version 0.19.0
+command -v cargo-deny >/dev/null 2>&1 || { echo "error: cargo-deny not found; install with: cargo install --locked cargo-deny --version 0.19.0"; exit 1; }
+cargo deny check -d
+
 # cargo install typos-cli
 typos
 

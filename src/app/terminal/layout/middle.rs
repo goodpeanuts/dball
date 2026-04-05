@@ -18,7 +18,6 @@ pub fn MiddleLayout(mut hooks: Hooks<'_, '_>) -> impl Into<AnyElement<'static>> 
     let mut current_time = hooks.use_state(chrono::Local::now);
 
     hooks.use_future(async move {
-        #[expect(clippy::infinite_loop)]
         loop {
             tokio::time::sleep(std::time::Duration::from_secs(1)).await;
             *current_time.write() = chrono::Local::now();

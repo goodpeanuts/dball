@@ -46,7 +46,6 @@ pub fn TimeAndPeriodPanel(mut hooks: Hooks<'_, '_>) -> impl Into<AnyElement<'sta
     let mut time = hooks.use_state(chrono::Local::now);
 
     hooks.use_future(async move {
-        #[expect(clippy::infinite_loop)]
         loop {
             tokio::time::sleep(std::time::Duration::from_secs(1)).await;
             *time.write() = chrono::Local::now();

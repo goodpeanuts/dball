@@ -198,25 +198,26 @@ impl ApiConfig {
             let entry = entry?;
             let path = entry.path();
 
-            if path.is_file() && path.extension().and_then(|s| s.to_str()) == Some("toml") {
-                if let Some(file_stem) = path.file_stem().and_then(|s| s.to_str()) {
-                    // ignore unknown provider
+            if path.is_file()
+                && path.extension().and_then(|s| s.to_str()) == Some("toml")
+                && let Some(file_stem) = path.file_stem().and_then(|s| s.to_str())
+            {
+                // ignore unknown provider
 
-                    let Ok(api_provider) = file_stem.parse::<ApiProvider>() else {
-                        log::warn!(
-                            "Unknown provider name '{file_stem}' found in config file, ignoring",
-                        );
-                        continue;
-                    };
+                let Ok(api_provider) = file_stem.parse::<ApiProvider>() else {
+                    log::warn!(
+                        "Unknown provider name '{file_stem}' found in config file, ignoring",
+                    );
+                    continue;
+                };
 
-                    match Self::load_provider_config_in_dir(&path) {
-                        Ok(config) => {
-                            provider_configs.insert(api_provider, config);
-                            log::debug!("Successfully loaded config for provider: {file_stem}");
-                        }
-                        Err(e) => {
-                            log::warn!("Failed to load config for provider {file_stem}: {e}");
-                        }
+                match Self::load_provider_config_in_dir(&path) {
+                    Ok(config) => {
+                        provider_configs.insert(api_provider, config);
+                        log::debug!("Successfully loaded config for provider: {file_stem}");
+                    }
+                    Err(e) => {
+                        log::warn!("Failed to load config for provider {file_stem}: {e}");
                     }
                 }
             }
